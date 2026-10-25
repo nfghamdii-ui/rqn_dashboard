@@ -51,7 +51,7 @@
     <header>
       <div class="brand">RQN <small id="crumb">كل التطبيقات</small></div>
       <div>
-        <select id="range"><option value="7">آخر ٧ أيام</option><option value="30" selected>آخر ٣٠ يوم</option><option value="90">آخر ٩٠ يوم</option></select>
+        <select id="range"><option value="7">أسبوع</option><option value="30" selected>شهر</option><option value="365">سنة</option><option value="all">كامل</option></select>
         <button id="refresh">تحديث</button>
         <button id="usersBtn" class="hidden">المستخدمين</button>
         <button id="logout">خروج</button>
@@ -100,8 +100,11 @@ window.onhashchange = () => render();
 
 async function load() {
   $("status").textContent = "جاري التحميل…";
-  const { data: d, error } = await sb.functions.invoke("dashboard-stats", { body: { days: Number($("range").value) } });
+  const all = $("range").value === "all";
+  const { data: d, error } = await sb.functions.invoke("dashboard-stats", { body: { days: all ? 365 : Number($("range").value) } });
   if (error) { $("status").textContent = "ما قدرنا نجيب الأرقام." + (error.context?.status === 403 ? " هالحساب ما له صلاحية." : ""); return; }
+  // "Full": from the first day any app had a sale or download (Apple keeps daily reports for a year).
+  if (all) { const i = d.store.days.map((x) => x.rows.length > 0).lastIndexOf(true); if (i >= 0) d.store.days = d.store.days.slice(0, i + 1); }
   data = d;
   $("usersBtn").classList.toggle("hidden", d.role !== "admin");
   $("status").textContent = "آخر تحديث: " + new Date(d.generatedAt).toLocaleString("ar-SA") + " · أرقام App Store تتأخر يوم" + (d.store.error ? " · ⚠️ تعذّر جلب بعض الأيام" : "");
