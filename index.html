@@ -8,84 +8,57 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#171614; --card:#211f1c; --line:#33302b; --ink:#ede8df; --soft:#b6ada0; --muted:#7d756a; --rust:#d97340; --green:#7fb069; --red:#d9534f; }
+  :root { --bg:#141311; --card:#1e1c19; --card2:#252320; --line:#312e29; --ink:#efe9df; --soft:#b9b0a2; --muted:#80786c; --rust:#d97340; --green:#7fb069; }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 "IBM Plex Sans Arabic", system-ui, sans-serif; }
-  main { max-width:960px; margin:0 auto; padding:20px 16px 60px; }
-  header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
-  h1 { font-size:20px; font-weight:500; margin:0; letter-spacing:.5px; }
-  h2 { font-size:15px; font-weight:500; color:var(--soft); margin:28px 0 10px; }
-  select, button, input { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 12px; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 "IBM Plex Sans Arabic", system-ui, sans-serif; }
+  main { max-width:980px; margin:0 auto; padding:18px 16px 60px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+  .brand { font-size:22px; font-weight:500; letter-spacing:3px; } .brand small { color:var(--muted); font-size:13px; letter-spacing:0; margin-inline-start:8px; }
+  h2 { font-size:14px; font-weight:500; color:var(--soft); margin:26px 0 10px; }
+  select, button, input { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:10px; padding:7px 12px; }
   button { cursor:pointer; } button.primary { background:var(--rust); border-color:var(--rust); color:#1b1410; font-weight:500; }
-  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
-  .tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
-  .tile .k { color:var(--muted); font-size:13px; } .tile .v { font-size:26px; font-weight:500; margin-top:2px; } .tile .s { color:var(--soft); font-size:12px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 15px; }
+  .tile .k { color:var(--muted); font-size:12.5px; } .tile .v { font-size:25px; font-weight:500; margin-top:2px; font-variant-numeric:tabular-nums; } .tile .s { color:var(--soft); font-size:12px; }
+  .apps { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
+  .app { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; cursor:pointer; transition:border-color .15s; }
+  .app:hover { border-color:var(--rust); }
+  .app .top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .app .name { font-size:17px; font-weight:500; } .app .go { color:var(--rust); font-size:13px; }
+  .app .row { display:flex; gap:16px; margin-top:10px; } .app .row div { flex:1; } .app .row .k { color:var(--muted); font-size:12px; } .app .row .v { font-size:20px; font-weight:500; }
   .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
   table { width:100%; border-collapse:collapse; font-size:14px; } td, th { padding:7px 4px; border-bottom:1px solid var(--line); text-align:right; } th { color:var(--muted); font-weight:400; }
   td.n { text-align:left; direction:ltr; font-variant-numeric:tabular-nums; }
-  .note { color:var(--muted); font-size:13px; } .warn { color:var(--rust); font-size:13px; }
+  .note { color:var(--muted); font-size:12.5px; }
+  .back { background:none; border:none; color:var(--rust); padding:0; font-size:14px; }
   #login { max-width:380px; margin:12vh auto; text-align:center; } #login input { width:100%; margin:14px 0 10px; direction:ltr; text-align:center; }
-  canvas { max-height:260px; }
-  .hidden { display:none; }
+  canvas { max-height:240px; } .hidden { display:none; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; } @media (max-width:640px) { .two { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 <main>
   <section id="login" class="hidden">
-    <h1>لوحة RQN</h1>
-    <p class="note">سجّل دخول بإيميلك، ويوصلك رابط الدخول.</p>
-    <input id="email" type="email" placeholder="name@example.com" autocomplete="email">
-    <button class="primary" id="send">أرسل رابط الدخول</button>
+    <div class="brand">RQN</div>
+    <p class="note">سجّل دخول بحسابك. تسجّل مرة وحدة بس لكل جهاز.</p>
+    <input id="email" type="email" placeholder="الإيميل" autocomplete="username">
+    <input id="password" type="password" placeholder="كلمة المرور" autocomplete="current-password">
+    <button class="primary" id="send">دخول</button>
     <p id="loginMsg" class="note"></p>
   </section>
 
-  <section id="app" class="hidden">
+  <section id="dash" class="hidden">
     <header>
-      <h1>لوحة RQN</h1>
+      <div class="brand">RQN <small id="crumb">كل التطبيقات</small></div>
       <div>
-        <select id="appSel"><option value="">كل التطبيقات</option></select>
         <select id="range"><option value="7">آخر ٧ أيام</option><option value="30" selected>آخر ٣٠ يوم</option><option value="90">آخر ٩٠ يوم</option></select>
         <button id="refresh">تحديث</button>
+        <button id="usersBtn" class="hidden">المستخدمين</button>
         <button id="logout">خروج</button>
       </div>
     </header>
     <p id="status" class="note"></p>
-
-    <div class="tiles">
-      <div class="tile"><div class="k">التحميلات</div><div class="v" id="tDownloads">–</div><div class="s" id="tDownloadsS"></div></div>
-      <div class="tile"><div class="k">الأرباح (صافي)</div><div class="v" id="tProceeds">–</div><div class="s" id="tProceedsS"></div></div>
-      <div class="tile"><div class="k">مشتركين نشطين</div><div class="v" id="tSubs">–</div><div class="s" id="tSubsS"></div></div>
-      <div class="tile"><div class="k">حسابات مسجّلة</div><div class="v" id="tAccounts">–</div><div class="s" id="tAccountsS"></div></div>
-    </div>
-
-    <h2>التحميلات يوميًا</h2>
-    <div class="panel"><canvas id="chartDownloads"></canvas><p class="note">أرقام Apple تتأخر يوم: آخر يوم يظهر هو أمس.</p></div>
-
-    <h2>حسب التطبيق</h2>
-    <div class="panel"><table id="byApp"><thead><tr><th>التطبيق</th><th>تحميلات</th><th>إعادة تحميل</th><th>مشتريات</th><th>أرباح</th></tr></thead><tbody></tbody></table></div>
-
-    <h2>الدول</h2>
-    <div class="panel"><table id="byCountry"><thead><tr><th>الدولة</th><th>تحميلات</th></tr></thead><tbody></tbody></table></div>
-
-    <h2>مارس: الاشتراكات</h2>
-    <div class="tiles">
-      <div class="tile"><div class="k">شهري</div><div class="v" id="sMonthly">–</div></div>
-      <div class="tile"><div class="k">سنوي</div><div class="v" id="sYearly">–</div></div>
-      <div class="tile"><div class="k">انتهى اشتراكهم</div><div class="v" id="sLapsed">–</div></div>
-      <div class="tile"><div class="k">تجريبي (Sandbox)</div><div class="v" id="sSandbox">–</div></div>
-    </div>
-
-    <h2>مارس: الاستخدام يوميًا</h2>
-    <div class="panel"><canvas id="chartUsage"></canvas>
-      <p class="note">الأسئلة: «اسأل عنها» · البحث: البحث عن كلمة · المقاطع: «اسمعها من الناس».</p></div>
-
-    <h2>مارس: القاعدة والنشاط</h2>
-    <div class="tiles">
-      <div class="tile"><div class="k">الكلمات</div><div class="v" id="bWords">–</div></div>
-      <div class="tile"><div class="k">الإجابات الجاهزة</div><div class="v" id="bAnswers">–</div></div>
-      <div class="tile"><div class="k">تقدّم محفوظ</div><div class="v" id="aSynced">–</div><div class="s">حسابات زامنت تقدمها</div></div>
-      <div class="tile"><div class="k">نشطين هالأسبوع</div><div class="v" id="aWeek">–</div><div class="s">من المسجّلين</div></div>
-    </div>
+    <div id="view"></div>
   </section>
 </main>
 
@@ -93,105 +66,196 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="config.js"></script>
 <script>
-const sb = supabase.createClient(MARS_CFG.url, MARS_CFG.key, { auth: { persistSession: true, detectSessionInUrl: true } });
+const sb = supabase.createClient(MARS_CFG.url, MARS_CFG.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => new Intl.NumberFormat("ar-SA").format(Math.round(n));
-const FX = { SAR:1, USD:3.75, EUR:4.1, GBP:4.8, AED:1.02, KWD:12.2, QAR:1.03, BHD:9.95, OMR:9.74, EGP:0.077 };
+const sar = (n) => fmt(n) + " ر.س";
+const FX = { SAR:1, USD:3.75, EUR:4.1, GBP:4.8, AED:1.02, KWD:12.2, QAR:1.03, BHD:9.95, OMR:9.74, EGP:0.077, JOD:5.3 };
 const countryName = (c) => { try { return new Intl.DisplayNames(["ar"], { type: "region" }).of(c) || c; } catch { return c; } };
-const DOWNLOADS = new Set(["1","1F","1T","F1","1E","1EP","1EU"]), REDOWNLOADS = new Set(["3","3F","3T","F3"]);
+const DL = new Set(["1","1F","1T","F1","1E","1EP","1EU"]), RE = new Set(["3","3F","3T","F3"]), UPD = new Set(["7","7F","7T","F7"]);
 const isIAP = (t) => t.startsWith("IA") || t === "FI1";
+// Apps whose own backend reports extra numbers, by App Store SKU.
+const EXTRA = { mars001: "mars" };
 let data = null, charts = {};
 
 async function show() {
   const { data: { session } } = await sb.auth.getSession();
   $("login").classList.toggle("hidden", !!session);
-  $("app").classList.toggle("hidden", !session);
-  if (session) load();
+  $("dash").classList.toggle("hidden", !session);
+  if (session && !data) load();
 }
-
 $("send").onclick = async () => {
-  const email = $("email").value.trim();
-  if (!email) { $("loginMsg").textContent = "اكتب إيميلك أول."; return; }
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split("#")[0], shouldCreateUser: true } });
-  $("loginMsg").textContent = error ? "ما قدرنا نرسل الرابط: " + error.message : "أرسلنا لك رابط الدخول. افتحه من نفس الجهاز.";
+  const email = $("email").value.trim(), password = $("password").value;
+  if (!email || !password) { $("loginMsg").textContent = "اكتب الإيميل وكلمة المرور."; return; }
+  $("loginMsg").textContent = "…";
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  $("loginMsg").textContent = error ? "الإيميل أو كلمة المرور غلط." : "";
 };
-$("logout").onclick = async () => { await sb.auth.signOut(); show(); };
+$("password").onkeydown = (e) => { if (e.key === "Enter") $("send").click(); };
+$("usersBtn").onclick = () => { location.hash = "users"; };
+$("logout").onclick = async () => { await sb.auth.signOut(); data = null; show(); };
 $("refresh").onclick = () => load();
 $("range").onchange = () => load();
-$("appSel").onchange = () => render();
+window.onhashchange = () => render();
 
 async function load() {
   $("status").textContent = "جاري التحميل…";
   const { data: d, error } = await sb.functions.invoke("dashboard-stats", { body: { days: Number($("range").value) } });
-  if (error) { $("status").textContent = "ما قدرنا نجيب الأرقام. " + (error.context?.status === 403 ? "هالحساب ما له صلاحية." : ""); return; }
+  if (error) { $("status").textContent = "ما قدرنا نجيب الأرقام." + (error.context?.status === 403 ? " هالحساب ما له صلاحية." : ""); return; }
   data = d;
-  const apps = new Map();
-  for (const day of d.store.days) for (const r of day.rows) if (r.appId && r.app && !isIAP(r.type)) apps.set(r.appId, r.app);
-  const sel = $("appSel"), cur = sel.value;
-  sel.innerHTML = '<option value="">كل التطبيقات</option>' + [...apps].map(([id, n]) => `<option value="${id}">${n}</option>`).join("");
-  sel.value = apps.has(cur) ? cur : "";
-  $("status").textContent = "آخر تحديث: " + new Date(d.generatedAt).toLocaleString("ar-SA") + (d.store.error ? " · ⚠️ تعذّر جلب بعض أيام App Store" : "");
+  $("usersBtn").classList.toggle("hidden", d.role !== "admin");
+  $("status").textContent = "آخر تحديث: " + new Date(d.generatedAt).toLocaleString("ar-SA") + " · أرقام App Store تتأخر يوم" + (d.store.error ? " · ⚠️ تعذّر جلب بعض الأيام" : "");
   render();
+}
+
+/// Per-app summary from the store rows, grouped by SKU.
+function summarise() {
+  const apps = new Map();
+  const get = (sku) => apps.get(sku) ?? apps.set(sku, { sku, name: "", dl: 0, re: 0, upd: 0, iap: 0, proceeds: 0, plans: {}, countries: {}, daily: {} }).get(sku);
+  const days = data.store.days.map((d) => d.day).reverse();
+  for (const day of data.store.days) for (const r of day.rows) {
+    if (!r.sku) continue;
+    const a = get(r.sku);
+    if (!isIAP(r.type) && r.app) a.name = r.app;
+    const p = r.proceeds * (FX[r.currency] ?? 0);
+    a.proceeds += p;
+    if (DL.has(r.type)) { a.dl += r.units; a.countries[r.country] = (a.countries[r.country] ?? 0) + r.units; a.daily[day.day] = (a.daily[day.day] ?? 0) + r.units; }
+    else if (RE.has(r.type)) a.re += r.units;
+    else if (UPD.has(r.type)) a.upd += r.units;
+    else if (isIAP(r.type)) { a.iap += r.units; const k = r.app || "اشتراك"; a.plans[k] = { units: (a.plans[k]?.units ?? 0) + r.units, p: (a.plans[k]?.p ?? 0) + p }; }
+  }
+  return { apps: [...apps.values()].filter((a) => a.name).sort((x, y) => y.dl - x.dl), days };
 }
 
 function render() {
   if (!data) return;
-  const app = $("appSel").value;
-  const rows = (day) => day.rows.filter((r) => !app || r.appId === app);
-  const labels = data.store.days.map((d) => d.day.slice(5)).reverse();
-  const perDay = data.store.days.map((d) => rows(d).filter((r) => DOWNLOADS.has(r.type)).reduce((s, r) => s + r.units, 0)).reverse();
-  const all = data.store.days.flatMap(rows);
-  const downloads = all.filter((r) => DOWNLOADS.has(r.type)).reduce((s, r) => s + r.units, 0);
-  const proceeds = all.reduce((s, r) => s + r.proceeds * (FX[r.currency] ?? 0), 0);
-  $("tDownloads").textContent = fmt(downloads);
-  $("tDownloadsS").textContent = "أمس: " + fmt(perDay[perDay.length - 1] || 0);
-  $("tProceeds").textContent = fmt(proceeds) + " ر.س";
-  $("tProceedsS").textContent = "تقريبي، بعد عمولة Apple";
-  $("tSubs").textContent = fmt(data.subscriptions.active);
-  $("tSubsS").textContent = "مارس";
-  $("tAccounts").textContent = fmt(data.accounts.total);
-  $("tAccountsS").textContent = "جديد بالفترة: " + fmt(data.accounts.new);
-
-  const byApp = new Map();
-  for (const r of data.store.days.flatMap((d) => d.rows)) {
-    const k = r.appId; const a = byApp.get(k) ?? { name: "", dl: 0, re: 0, iap: 0, p: 0 };
-    if (!isIAP(r.type) && r.app) a.name = r.app;
-    if (DOWNLOADS.has(r.type)) a.dl += r.units; else if (REDOWNLOADS.has(r.type)) a.re += r.units; else if (isIAP(r.type)) a.iap += r.units;
-    a.p += r.proceeds * (FX[r.currency] ?? 0); byApp.set(k, a);
-  }
-  $("byApp").tBodies[0].innerHTML = [...byApp.values()].sort((a, b) => b.dl - a.dl).map((a) =>
-    `<tr><td>${a.name || "—"}</td><td class="n">${fmt(a.dl)}</td><td class="n">${fmt(a.re)}</td><td class="n">${fmt(a.iap)}</td><td class="n">${fmt(a.p)} ر.س</td></tr>`).join("") || '<tr><td colspan="5" class="note">ما فيه بيانات للحين.</td></tr>';
-
-  const byC = new Map();
-  for (const r of all.filter((r) => DOWNLOADS.has(r.type))) byC.set(r.country, (byC.get(r.country) ?? 0) + r.units);
-  $("byCountry").tBodies[0].innerHTML = [...byC].sort((a, b) => b[1] - a[1]).slice(0, 15).map(([c, n]) =>
-    `<tr><td>${countryName(c)}</td><td class="n">${fmt(n)}</td></tr>`).join("") || '<tr><td colspan="2" class="note">ما فيه بيانات للحين.</td></tr>';
-
-  $("sMonthly").textContent = fmt(data.subscriptions.monthly);
-  $("sYearly").textContent = fmt(data.subscriptions.yearly);
-  $("sLapsed").textContent = fmt(data.subscriptions.lapsed);
-  $("sSandbox").textContent = fmt(data.subscriptions.sandbox);
-  $("bWords").textContent = fmt(data.bank.words);
-  $("bAnswers").textContent = fmt(data.bank.answers);
-  $("aSynced").textContent = fmt(data.accounts.synced);
-  $("aWeek").textContent = fmt(data.accounts.activeWeek);
-
-  draw("chartDownloads", "bar", labels, [{ label: "تحميلات", data: perDay, backgroundColor: "#d97340" }]);
-  const days = data.store.days.map((d) => d.day).reverse();
-  const series = (prefix) => days.map((d) => Object.entries(data.usage).filter(([fn]) => fn.startsWith(prefix)).reduce((s, [, v]) => s + (v[d] ?? 0), 0));
-  draw("chartUsage", "line", labels, [
-    { label: "الأسئلة", data: series("ask-word"), borderColor: "#d97340", tension: .3 },
-    { label: "البحث", data: series("lookup-word"), borderColor: "#7fb069", tension: .3 },
-    { label: "المقاطع", data: series("youglish"), borderColor: "#b6ada0", tension: .3 },
-  ]);
+  Object.values(charts).forEach((c) => c.destroy()); charts = {};
+  const { apps, days } = summarise();
+  const sku = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+  if (sku === "users") return renderUsers();
+  const app = apps.find((a) => a.sku === sku);
+  return app ? renderApp(app, days) : renderAll(apps, days);
 }
 
-function draw(id, type, labels, datasets) {
-  charts[id]?.destroy();
+function renderAll(apps, days) {
+  $("crumb").textContent = "كل التطبيقات";
+  const tot = apps.reduce((s, a) => ({ dl: s.dl + a.dl, iap: s.iap + a.iap, p: s.p + a.proceeds, upd: s.upd + a.upd }), { dl: 0, iap: 0, p: 0, upd: 0 });
+  $("view").innerHTML = `
+    <div class="tiles">
+      <div class="tile"><div class="k">التحميلات</div><div class="v">${fmt(tot.dl)}</div><div class="s">كل التطبيقات</div></div>
+      <div class="tile"><div class="k">الأرباح (صافي تقريبي)</div><div class="v">${sar(tot.p)}</div><div class="s">بعد عمولة Apple</div></div>
+      <div class="tile"><div class="k">اشتراكات ومشتريات</div><div class="v">${fmt(tot.iap)}</div><div class="s">تشمل بدايات التجربة</div></div>
+      <div class="tile"><div class="k">التطبيقات</div><div class="v">${fmt(apps.length)}</div><div class="s">على App Store</div></div>
+    </div>
+    <h2>التطبيقات</h2>
+    <div class="apps">${apps.map((a, i) => `
+      <div class="app" onclick="location.hash='${encodeURIComponent(a.sku)}'">
+        <div class="top"><div class="name">${a.name}</div><div class="go">التفاصيل ←</div></div>
+        <div class="row"><div><div class="k">تحميلات</div><div class="v">${fmt(a.dl)}</div></div><div><div class="k">اشتراكات</div><div class="v">${fmt(a.iap)}</div></div><div><div class="k">أرباح</div><div class="v">${fmt(a.proceeds)}</div></div></div>
+        <canvas id="spark${i}" height="60"></canvas>
+      </div>`).join("") || '<p class="note">ما فيه بيانات للحين.</p>'}</div>
+    <h2>التحميلات يوميًا</h2>
+    <div class="panel"><canvas id="cAll"></canvas></div>`;
+  const labels = days.map((d) => d.slice(5));
+  const colors = ["#d97340", "#7fb069", "#b9b0a2", "#6fa8dc", "#c27ba0"];
+  apps.forEach((a, i) => spark(`spark${i}`, labels, days.map((d) => a.daily[d] ?? 0), colors[i % colors.length]));
+  chart("cAll", "bar", labels, apps.map((a, i) => ({ label: a.name, data: days.map((d) => a.daily[d] ?? 0), backgroundColor: colors[i % colors.length], stack: "s" })), true);
+}
+
+function renderApp(a, days) {
+  $("crumb").textContent = a.name;
+  const labels = days.map((d) => d.slice(5));
+  const countries = Object.entries(a.countries).sort((x, y) => y[1] - x[1]).slice(0, 12);
+  const plans = Object.entries(a.plans).sort((x, y) => y[1].units - x[1].units);
+  const extra = EXTRA[a.sku];
+  $("view").innerHTML = `
+    <button class="back" onclick="location.hash=''">→ كل التطبيقات</button>
+    <div class="tiles" style="margin-top:12px">
+      <div class="tile"><div class="k">تحميلات جديدة</div><div class="v">${fmt(a.dl)}</div><div class="s">أمس: ${fmt(a.daily[days[days.length - 1]] ?? 0)}</div></div>
+      <div class="tile"><div class="k">إعادة تحميل</div><div class="v">${fmt(a.re)}</div></div>
+      <div class="tile"><div class="k">تحديثات</div><div class="v">${fmt(a.upd)}</div></div>
+      <div class="tile"><div class="k">الأرباح (صافي تقريبي)</div><div class="v">${sar(a.proceeds)}</div></div>
+    </div>
+    <h2>التحميلات يوميًا</h2>
+    <div class="panel"><canvas id="cApp"></canvas></div>
+    <div class="two">
+      <div><h2>الاشتراكات والمشتريات (App Store)</h2><div class="panel"><table><thead><tr><th>الباقة</th><th>العدد</th><th>الأرباح</th></tr></thead><tbody>${plans.map(([n, v]) => `<tr><td>${n}</td><td class="n">${fmt(v.units)}</td><td class="n">${sar(v.p)}</td></tr>`).join("") || '<tr><td colspan="3" class="note">ما فيه للحين.</td></tr>'}</tbody></table><p class="note">العدد يشمل بدايات التجربة المجانية (بدون أرباح).</p></div></div>
+      <div><h2>الدول</h2><div class="panel"><table><thead><tr><th>الدولة</th><th>تحميلات</th></tr></thead><tbody>${countries.map(([c, n]) => `<tr><td>${countryName(c)}</td><td class="n">${fmt(n)}</td></tr>`).join("") || '<tr><td colspan="2" class="note">ما فيه للحين.</td></tr>'}</tbody></table></div></div>
+    </div>
+    ${extra === "mars" ? marsSection() : '<p class="note" style="margin-top:24px">هالتطبيق ما له بيانات استخدام مربوطة. أرقام App Store بس.</p>'}`;
+  chart("cApp", "bar", labels, [{ label: "تحميلات", data: days.map((d) => a.daily[d] ?? 0), backgroundColor: "#d97340" }]);
+  if (extra === "mars") {
+    const s = (p) => days.map((d) => Object.entries(data.usage).filter(([fn]) => fn.startsWith(p)).reduce((t, [, v]) => t + (v[d] ?? 0), 0));
+    chart("cUsage", "line", labels, [
+      { label: "البحث عن كلمة", data: s("lookup-word"), borderColor: "#7fb069", tension: .3 },
+      { label: "اسمعها من الناس", data: s("youglish"), borderColor: "#d97340", tension: .3 },
+      { label: "كلمات جديدة من الذكاء", data: s("generate-words"), borderColor: "#b9b0a2", tension: .3 },
+    ]);
+  }
+}
+
+function marsSection() {
+  const sub = data.subscriptions, acc = data.accounts, bank = data.bank;
+  return `
+    <h2>مارس: المشتركين (من خادم مارس، مباشر)</h2>
+    <div class="tiles">
+      <div class="tile"><div class="k">نشطين الحين</div><div class="v">${fmt(sub.active)}</div></div>
+      <div class="tile"><div class="k">شهري</div><div class="v">${fmt(sub.monthly)}</div></div>
+      <div class="tile"><div class="k">سنوي</div><div class="v">${fmt(sub.yearly)}</div></div>
+      <div class="tile"><div class="k">انتهى اشتراكهم</div><div class="v">${fmt(sub.lapsed)}</div></div>
+    </div>
+    <h2>مارس: المستخدمين</h2>
+    <div class="tiles">
+      <div class="tile"><div class="k">حسابات مسجّلة</div><div class="v">${fmt(acc.total)}</div><div class="s">جديد بالفترة: ${fmt(acc.new)}</div></div>
+      <div class="tile"><div class="k">تقدّم محفوظ</div><div class="v">${fmt(acc.synced)}</div></div>
+      <div class="tile"><div class="k">نشطين هالأسبوع</div><div class="v">${fmt(acc.activeWeek)}</div><div class="s">من المسجّلين</div></div>
+    </div>
+    <h2>مارس: الاستخدام يوميًا</h2>
+    <div class="panel"><canvas id="cUsage"></canvas></div>
+    <h2>مارس: القاعدة</h2>
+    <div class="tiles">
+      <div class="tile"><div class="k">الكلمات</div><div class="v">${fmt(bank.words)}</div></div>
+      <div class="tile"><div class="k">الإجابات الجاهزة</div><div class="v">${fmt(bank.answers)}</div></div>
+    </div>`;
+}
+
+async function renderUsers() {
+  $("crumb").textContent = "المستخدمين";
+  $("view").innerHTML = `<button class="back" onclick="location.hash=''">→ كل التطبيقات</button>
+    <h2>اللي يقدرون يدخلون اللوحة</h2><div class="panel"><table id="mt"><thead><tr><th>الإيميل</th><th>الصلاحية</th><th></th></tr></thead><tbody><tr><td class="note">…</td></tr></tbody></table></div>
+    <h2>إضافة مستخدم</h2><div class="panel">
+      <input id="nEmail" type="email" placeholder="الإيميل" style="width:100%;margin-bottom:8px;direction:ltr">
+      <input id="nPass" type="text" placeholder="كلمة مرور (٨ أحرف أو أكثر)" style="width:100%;margin-bottom:8px;direction:ltr" autocomplete="off">
+      <select id="nRole"><option value="viewer">يشوف بس</option><option value="admin">مدير (يضيف ويحذف)</option></select>
+      <button class="primary" id="nAdd">إضافة</button> <span id="nMsg" class="note"></span>
+      <p class="note">أعطِ الشخص الإيميل وكلمة المرور بنفسك. لو كان عنده حساب في مارس بنفس الإيميل، تنضاف له كلمة المرور هذي.</p></div>`;
+  const call = (body) => sb.functions.invoke("dashboard-stats", { body });
+  const list = async () => {
+    const { data: d } = await call({ action: "members" });
+    $("mt").tBodies[0].innerHTML = (d?.members ?? []).map((m) => `<tr><td style="direction:ltr;text-align:right">${m.email}</td><td>${m.role === "admin" ? "مدير" : "يشوف بس"}</td><td>${m.email === d.me ? '<span class="note">أنت</span>' : `<button data-rm="${m.email}">حذف</button>`}</td></tr>`).join("");
+    document.querySelectorAll("[data-rm]").forEach((b) => b.onclick = async () => { if (confirm("تحذف " + b.dataset.rm + "؟")) { await call({ action: "remove", email: b.dataset.rm }); list(); } });
+  };
+  $("nAdd").onclick = async () => {
+    const email = $("nEmail").value.trim(), password = $("nPass").value;
+    if (!email.includes("@")) { $("nMsg").textContent = "اكتب إيميل صحيح."; return; }
+    if (password.length < 8) { $("nMsg").textContent = "كلمة المرور ٨ أحرف أو أكثر."; return; }
+    $("nMsg").textContent = "…";
+    const { error } = await call({ action: "add", email, password, role: $("nRole").value });
+    $("nMsg").textContent = error ? "ما انضاف." : "انضاف ✓"; if (!error) { $("nEmail").value = ""; $("nPass").value = ""; list(); }
+  };
+  list();
+}
+
+const axis = { ticks: { color: "#80786c" }, grid: { color: "#28251f" } };
+function chart(id, type, labels, datasets, stacked = false) {
   charts[id] = new Chart($(id), { type, data: { labels, datasets }, options: {
-    plugins: { legend: { labels: { color: "#b6ada0", font: { family: "IBM Plex Sans Arabic" } } } },
-    scales: { x: { ticks: { color: "#7d756a" }, grid: { color: "#2a2723" } }, y: { beginAtZero: true, ticks: { color: "#7d756a", precision: 0 }, grid: { color: "#2a2723" } } },
+    plugins: { legend: { labels: { color: "#b9b0a2", font: { family: "IBM Plex Sans Arabic" } } } },
+    scales: { x: { ...axis, stacked }, y: { ...axis, stacked, beginAtZero: true, ticks: { ...axis.ticks, precision: 0 } } },
   } });
+}
+function spark(id, labels, values, color) {
+  charts[id] = new Chart($(id), { type: "line", data: { labels, datasets: [{ data: values, borderColor: color, borderWidth: 2, pointRadius: 0, tension: .35, fill: false }] },
+    options: { plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: true } }, events: [] } });
 }
 
 sb.auth.onAuthStateChange(() => show());
