@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>لوحة RQN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#171614; --card:#211f1c; --line:#33302b; --ink:#ede8df; --soft:#b6ada0; --muted:#7d756a; --rust:#d97340; --green:#7fb069; --red:#d9534f; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 "IBM Plex Sans Arabic", system-ui, sans-serif; }
+  main { max-width:960px; margin:0 auto; padding:20px 16px 60px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+  h1 { font-size:20px; font-weight:500; margin:0; letter-spacing:.5px; }
+  h2 { font-size:15px; font-weight:500; color:var(--soft); margin:28px 0 10px; }
+  select, button, input { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 12px; }
+  button { cursor:pointer; } button.primary { background:var(--rust); border-color:var(--rust); color:#1b1410; font-weight:500; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+  .tile .k { color:var(--muted); font-size:13px; } .tile .v { font-size:26px; font-weight:500; margin-top:2px; } .tile .s { color:var(--soft); font-size:12px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; } td, th { padding:7px 4px; border-bottom:1px solid var(--line); text-align:right; } th { color:var(--muted); font-weight:400; }
+  td.n { text-align:left; direction:ltr; font-variant-numeric:tabular-nums; }
+  .note { color:var(--muted); font-size:13px; } .warn { color:var(--rust); font-size:13px; }
+  #login { max-width:380px; margin:12vh auto; text-align:center; } #login input { width:100%; margin:14px 0 10px; direction:ltr; text-align:center; }
+  canvas { max-height:260px; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <section id="login" class="hidden">
+    <h1>لوحة RQN</h1>
+    <p class="note">سجّل دخول بإيميلك، ويوصلك رابط الدخول.</p>
+    <input id="email" type="email" placeholder="name@example.com" autocomplete="email">
+    <button class="primary" id="send">أرسل رابط الدخول</button>
+    <p id="loginMsg" class="note"></p>
+  </section>
+
+  <section id="app" class="hidden">
+    <header>
+      <h1>لوحة RQN</h1>
+      <div>
+        <select id="appSel"><option value="">كل التطبيقات</option></select>
+        <select id="range"><option value="7">آخر ٧ أيام</option><option value="30" selected>آخر ٣٠ يوم</option><option value="90">آخر ٩٠ يوم</option></select>
+        <button id="refresh">تحديث</button>
+        <button id="logout">خروج</button>
+      </div>
+    </header>
+    <p id="status" class="note"></p>
+
+    <div class="tiles">
+      <div class="tile"><div class="k">التحميلات</div><div class="v" id="tDownloads">–</div><div class="s" id="tDownloadsS"></div></div>
+      <div class="tile"><div class="k">الأرباح (صافي)</div><div class="v" id="tProceeds">–</div><div class="s" id="tProceedsS"></div></div>
+      <div class="tile"><div class="k">مشتركين نشطين</div><div class="v" id="tSubs">–</div><div class="s" id="tSubsS"></div></div>
+      <div class="tile"><div class="k">حسابات مسجّلة</div><div class="v" id="tAccounts">–</div><div class="s" id="tAccountsS"></div></div>
+    </div>
+
+    <h2>التحميلات يوميًا</h2>
+    <div class="panel"><canvas id="chartDownloads"></canvas><p class="note">أرقام Apple تتأخر يوم: آخر يوم يظهر هو أمس.</p></div>
+
+    <h2>حسب التطبيق</h2>
+    <div class="panel"><table id="byApp"><thead><tr><th>التطبيق</th><th>تحميلات</th><th>إعادة تحميل</th><th>مشتريات</th><th>أرباح</th></tr></thead><tbody></tbody></table></div>
+
+    <h2>الدول</h2>
+    <div class="panel"><table id="byCountry"><thead><tr><th>الدولة</th><th>تحميلات</th></tr></thead><tbody></tbody></table></div>
+
+    <h2>مارس: الاشتراكات</h2>
+    <div class="tiles">
+      <div class="tile"><div class="k">شهري</div><div class="v" id="sMonthly">–</div></div>
+      <div class="tile"><div class="k">سنوي</div><div class="v" id="sYearly">–</div></div>
+      <div class="tile"><div class="k">انتهى اشتراكهم</div><div class="v" id="sLapsed">–</div></div>
+      <div class="tile"><div class="k">تجريبي (Sandbox)</div><div class="v" id="sSandbox">–</div></div>
+    </div>
+
+    <h2>مارس: الاستخدام يوميًا</h2>
+    <div class="panel"><canvas id="chartUsage"></canvas>
+      <p class="note">الأسئلة: «اسأل عنها» · البحث: البحث عن كلمة · المقاطع: «اسمعها من الناس».</p></div>
+
+    <h2>مارس: القاعدة والنشاط</h2>
+    <div class="tiles">
+      <div class="tile"><div class="k">الكلمات</div><div class="v" id="bWords">–</div></div>
+      <div class="tile"><div class="k">الإجابات الجاهزة</div><div class="v" id="bAnswers">–</div></div>
+      <div class="tile"><div class="k">تقدّم محفوظ</div><div class="v" id="aSynced">–</div><div class="s">حسابات زامنت تقدمها</div></div>
+      <div class="tile"><div class="k">نشطين هالأسبوع</div><div class="v" id="aWeek">–</div><div class="s">من المسجّلين</div></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="config.js"></script>
+<script>
+const sb = supabase.createClient(MARS_CFG.url, MARS_CFG.key, { auth: { persistSession: true, detectSessionInUrl: true } });
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => new Intl.NumberFormat("ar-SA").format(Math.round(n));
+const FX = { SAR:1, USD:3.75, EUR:4.1, GBP:4.8, AED:1.02, KWD:12.2, QAR:1.03, BHD:9.95, OMR:9.74, EGP:0.077 };
+const countryName = (c) => { try { return new Intl.DisplayNames(["ar"], { type: "region" }).of(c) || c; } catch { return c; } };
+const DOWNLOADS = new Set(["1","1F","1T","F1","1E","1EP","1EU"]), REDOWNLOADS = new Set(["3","3F","3T","F3"]);
+const isIAP = (t) => t.startsWith("IA") || t === "FI1";
+let data = null, charts = {};
+
+async function show() {
+  const { data: { session } } = await sb.auth.getSession();
+  $("login").classList.toggle("hidden", !!session);
+  $("app").classList.toggle("hidden", !session);
+  if (session) load();
+}
+
+$("send").onclick = async () => {
+  const email = $("email").value.trim();
+  if (!email) { $("loginMsg").textContent = "اكتب إيميلك أول."; return; }
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split("#")[0], shouldCreateUser: false } });
+  $("loginMsg").textContent = error ? "ما قدرنا نرسل الرابط: " + error.message : "أرسلنا لك رابط الدخول. افتحه من نفس الجهاز.";
+};
+$("logout").onclick = async () => { await sb.auth.signOut(); show(); };
+$("refresh").onclick = () => load();
+$("range").onchange = () => load();
+$("appSel").onchange = () => render();
+
+async function load() {
+  $("status").textContent = "جاري التحميل…";
+  const { data: d, error } = await sb.functions.invoke("dashboard-stats", { body: { days: Number($("range").value) } });
+  if (error) { $("status").textContent = "ما قدرنا نجيب الأرقام. " + (error.context?.status === 403 ? "هالحساب ما له صلاحية." : ""); return; }
+  data = d;
+  const apps = new Map();
+  for (const day of d.store.days) for (const r of day.rows) if (r.appId && r.app && !isIAP(r.type)) apps.set(r.appId, r.app);
+  const sel = $("appSel"), cur = sel.value;
+  sel.innerHTML = '<option value="">كل التطبيقات</option>' + [...apps].map(([id, n]) => `<option value="${id}">${n}</option>`).join("");
+  sel.value = apps.has(cur) ? cur : "";
+  $("status").textContent = "آخر تحديث: " + new Date(d.generatedAt).toLocaleString("ar-SA") + (d.store.error ? " · ⚠️ تعذّر جلب بعض أيام App Store" : "");
+  render();
+}
+
+function render() {
+  if (!data) return;
+  const app = $("appSel").value;
+  const rows = (day) => day.rows.filter((r) => !app || r.appId === app);
+  const labels = data.store.days.map((d) => d.day.slice(5)).reverse();
+  const perDay = data.store.days.map((d) => rows(d).filter((r) => DOWNLOADS.has(r.type)).reduce((s, r) => s + r.units, 0)).reverse();
+  const all = data.store.days.flatMap(rows);
+  const downloads = all.filter((r) => DOWNLOADS.has(r.type)).reduce((s, r) => s + r.units, 0);
+  const proceeds = all.reduce((s, r) => s + r.proceeds * (FX[r.currency] ?? 0), 0);
+  $("tDownloads").textContent = fmt(downloads);
+  $("tDownloadsS").textContent = "أمس: " + fmt(perDay[perDay.length - 1] || 0);
+  $("tProceeds").textContent = fmt(proceeds) + " ر.س";
+  $("tProceedsS").textContent = "تقريبي، بعد عمولة Apple";
+  $("tSubs").textContent = fmt(data.subscriptions.active);
+  $("tSubsS").textContent = "مارس";
+  $("tAccounts").textContent = fmt(data.accounts.total);
+  $("tAccountsS").textContent = "جديد بالفترة: " + fmt(data.accounts.new);
+
+  const byApp = new Map();
+  for (const r of data.store.days.flatMap((d) => d.rows)) {
+    const k = r.appId; const a = byApp.get(k) ?? { name: "", dl: 0, re: 0, iap: 0, p: 0 };
+    if (!isIAP(r.type) && r.app) a.name = r.app;
+    if (DOWNLOADS.has(r.type)) a.dl += r.units; else if (REDOWNLOADS.has(r.type)) a.re += r.units; else if (isIAP(r.type)) a.iap += r.units;
+    a.p += r.proceeds * (FX[r.currency] ?? 0); byApp.set(k, a);
+  }
+  $("byApp").tBodies[0].innerHTML = [...byApp.values()].sort((a, b) => b.dl - a.dl).map((a) =>
+    `<tr><td>${a.name || "—"}</td><td class="n">${fmt(a.dl)}</td><td class="n">${fmt(a.re)}</td><td class="n">${fmt(a.iap)}</td><td class="n">${fmt(a.p)} ر.س</td></tr>`).join("") || '<tr><td colspan="5" class="note">ما فيه بيانات للحين.</td></tr>';
+
+  const byC = new Map();
+  for (const r of all.filter((r) => DOWNLOADS.has(r.type))) byC.set(r.country, (byC.get(r.country) ?? 0) + r.units);
+  $("byCountry").tBodies[0].innerHTML = [...byC].sort((a, b) => b[1] - a[1]).slice(0, 15).map(([c, n]) =>
+    `<tr><td>${countryName(c)}</td><td class="n">${fmt(n)}</td></tr>`).join("") || '<tr><td colspan="2" class="note">ما فيه بيانات للحين.</td></tr>';
+
+  $("sMonthly").textContent = fmt(data.subscriptions.monthly);
+  $("sYearly").textContent = fmt(data.subscriptions.yearly);
+  $("sLapsed").textContent = fmt(data.subscriptions.lapsed);
+  $("sSandbox").textContent = fmt(data.subscriptions.sandbox);
+  $("bWords").textContent = fmt(data.bank.words);
+  $("bAnswers").textContent = fmt(data.bank.answers);
+  $("aSynced").textContent = fmt(data.accounts.synced);
+  $("aWeek").textContent = fmt(data.accounts.activeWeek);
+
+  draw("chartDownloads", "bar", labels, [{ label: "تحميلات", data: perDay, backgroundColor: "#d97340" }]);
+  const days = data.store.days.map((d) => d.day).reverse();
+  const series = (prefix) => days.map((d) => Object.entries(data.usage).filter(([fn]) => fn.startsWith(prefix)).reduce((s, [, v]) => s + (v[d] ?? 0), 0));
+  draw("chartUsage", "line", labels, [
+    { label: "الأسئلة", data: series("ask-word"), borderColor: "#d97340", tension: .3 },
+    { label: "البحث", data: series("lookup-word"), borderColor: "#7fb069", tension: .3 },
+    { label: "المقاطع", data: series("youglish"), borderColor: "#b6ada0", tension: .3 },
+  ]);
+}
+
+function draw(id, type, labels, datasets) {
+  charts[id]?.destroy();
+  charts[id] = new Chart($(id), { type, data: { labels, datasets }, options: {
+    plugins: { legend: { labels: { color: "#b6ada0", font: { family: "IBM Plex Sans Arabic" } } } },
+    scales: { x: { ticks: { color: "#7d756a" }, grid: { color: "#2a2723" } }, y: { beginAtZero: true, ticks: { color: "#7d756a", precision: 0 }, grid: { color: "#2a2723" } } },
+  } });
+}
+
+sb.auth.onAuthStateChange(() => show());
+show();
+</script>
+</body>
+</html>
