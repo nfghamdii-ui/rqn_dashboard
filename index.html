@@ -112,7 +112,7 @@ async function show() {
 $("send").onclick = async () => {
   const email = $("email").value.trim();
   if (!email) { $("loginMsg").textContent = "اكتب إيميلك أول."; return; }
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split("#")[0], shouldCreateUser: false } });
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.href.split("#")[0], shouldCreateUser: true } });
   $("loginMsg").textContent = error ? "ما قدرنا نرسل الرابط: " + error.message : "أرسلنا لك رابط الدخول. افتحه من نفس الجهاز.";
 };
 $("logout").onclick = async () => { await sb.auth.signOut(); show(); };
