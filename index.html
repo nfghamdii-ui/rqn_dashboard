@@ -4,60 +4,111 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#f6f4f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RQN">
 <title>لوحة RQN</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#141311; --card:#1e1c19; --card2:#252320; --line:#312e29; --ink:#efe9df; --soft:#b9b0a2; --muted:#80786c; --rust:#d97340; --green:#7fb069; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 "IBM Plex Sans Arabic", system-ui, sans-serif; }
-  main { max-width:980px; margin:0 auto; padding:18px 16px 60px; }
-  header { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
-  .brand { font-size:22px; font-weight:500; letter-spacing:3px; } .brand small { color:var(--muted); font-size:13px; letter-spacing:0; margin-inline-start:8px; }
-  h2 { font-size:14px; font-weight:500; color:var(--soft); margin:26px 0 10px; }
-  select, button, input { font:inherit; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:10px; padding:7px 12px; }
-  button { cursor:pointer; } button.primary { background:var(--rust); border-color:var(--rust); color:#1b1410; font-weight:500; }
-  .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
-  .tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 15px; }
-  .tile .k { color:var(--muted); font-size:12.5px; } .tile .v { font-size:25px; font-weight:500; margin-top:2px; font-variant-numeric:tabular-nums; } .tile .s { color:var(--soft); font-size:12px; }
-  .apps { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
-  .app { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; cursor:pointer; transition:border-color .15s; }
-  .app:hover { border-color:var(--rust); }
-  .app .top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
-  .app .name { font-size:17px; font-weight:500; } .app .go { color:var(--rust); font-size:13px; }
-  .app .row { display:flex; gap:16px; margin-top:10px; } .app .row div { flex:1; } .app .row .k { color:var(--muted); font-size:12px; } .app .row .v { font-size:20px; font-weight:500; }
-  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
-  table { width:100%; border-collapse:collapse; font-size:14px; } td, th { padding:7px 4px; border-bottom:1px solid var(--line); text-align:right; } th { color:var(--muted); font-weight:400; }
-  td.n { text-align:left; direction:ltr; font-variant-numeric:tabular-nums; }
-  .note { color:var(--muted); font-size:12.5px; }
-  .back { background:none; border:none; color:var(--rust); padding:0; font-size:14px; }
-  #login { max-width:380px; margin:12vh auto; text-align:center; } #login input { width:100%; margin:14px 0 10px; direction:ltr; text-align:center; }
-  canvas { max-height:240px; } .hidden { display:none; }
-  .two { display:grid; grid-template-columns:1fr 1fr; gap:12px; } @media (max-width:640px) { .two { grid-template-columns:1fr; } }
+  :root {
+    --bg:#f6f4f0; --surface:#ffffff; --surface2:#efebe4; --line:#e6e1d8; --ink:#1d1b18; --soft:#5f5a52; --muted:#857f75;
+    --accent:#b8562a; --accent-soft:#f7e7dd; --good:#2f7d4f; --good-soft:#e2f1e7; --c2:#3f6fb5; --c3:#8a6bbf;
+    --shadow:0 1px 2px rgba(30,25,20,.05), 0 4px 16px rgba(30,25,20,.05);
+  }
+  @media (prefers-color-scheme: dark) { :root {
+    --bg:#121212; --surface:#1c1b1a; --surface2:#262422; --line:#2f2c29; --ink:#f1ede6; --soft:#bdb5a9; --muted:#8f887d;
+    --accent:#e48a5a; --accent-soft:#3a2a20; --good:#6cc48f; --good-soft:#1f3328; --c2:#7da6e6; --c3:#b59ce0; --shadow:none;
+  } }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; background:var(--bg); color:var(--ink); overflow-x:hidden; }
+  body { font:16px/1.55 "IBM Plex Sans Arabic", -apple-system, system-ui, sans-serif; -webkit-text-size-adjust:100%; }
+  main { width:100%; max-width:920px; margin:0 auto; padding:max(14px, env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom)); }
+  .num { font-variant-numeric:tabular-nums; }
+  .hidden { display:none !important; }
+  .bar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0 14px; }
+  .brand { display:flex; align-items:baseline; gap:10px; min-width:0; }
+  .logo { font-weight:600; font-size:20px; letter-spacing:4px; }
+  .crumb { color:var(--soft); font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .icons { display:flex; gap:2px; flex-shrink:0; }
+  .ib { width:44px; height:44px; display:grid; place-items:center; border:none; background:transparent; color:var(--soft); border-radius:12px; cursor:pointer; }
+  .ib:active { background:var(--surface2); } .ib svg { width:22px; height:22px; }
+  .seg { display:grid; grid-template-columns:repeat(4,1fr); background:var(--surface2); border-radius:12px; padding:3px; margin-bottom:8px; }
+  .seg button { height:38px; border:none; background:transparent; color:var(--soft); font:inherit; font-size:15px; border-radius:9px; cursor:pointer; }
+  .seg button.on { background:var(--surface); color:var(--ink); font-weight:500; box-shadow:var(--shadow); }
+  .status { color:var(--muted); font-size:13px; margin:0 2px 14px; min-height:20px; }
+  .grid2 { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+  @media (min-width:720px) { .grid2.wide { grid-template-columns:repeat(4, minmax(0,1fr)); } }
+  .stat { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; box-shadow:var(--shadow); min-width:0; }
+  .stat .k { color:var(--soft); font-size:13.5px; }
+  .stat .v { font-size:25px; font-weight:600; margin-top:4px; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stat .s { color:var(--muted); font-size:12.5px; margin-top:2px; }
+  .stat.hero { background:var(--accent-soft); border-color:transparent; } .stat.hero .v { color:var(--accent); }
+  h2 { font-size:16px; font-weight:600; margin:28px 2px 10px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; box-shadow:var(--shadow); min-width:0; }
+  .chart { position:relative; height:220px; }
+  .apps { display:grid; gap:10px; } @media (min-width:720px) { .apps { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .app { display:block; width:100%; text-align:right; font:inherit; color:inherit; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; box-shadow:var(--shadow); cursor:pointer; }
+  .app:active { transform:scale(.99); }
+  .app .head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .app .name { font-size:16.5px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chev { color:var(--muted); flex-shrink:0; width:20px; height:20px; transform:scaleX(-1); }
+  .app .nums { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; margin-top:12px; }
+  .app .nums .k { color:var(--muted); font-size:12.5px; } .app .nums .v { font-size:19px; font-weight:600; }
+  .spark { height:44px; margin-top:10px; position:relative; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-inline-end:6px; vertical-align:middle; }
+  .rows { display:flex; flex-direction:column; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:11px 2px; border-bottom:1px solid var(--line); min-width:0; }
+  .row:last-child { border-bottom:none; }
+  .row .l { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row .r { flex-shrink:0; color:var(--soft); display:flex; align-items:center; gap:4px; } .row .r b { color:var(--ink); font-weight:600; }
+  .bar-fill { height:6px; border-radius:3px; background:var(--accent-soft); margin-top:6px; } .bar-fill i { display:block; height:100%; border-radius:3px; background:var(--accent); }
+  .note { color:var(--muted); font-size:13px; margin:8px 2px 0; }
+  .back { display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 4px; border:none; background:none; color:var(--accent); font:inherit; font-size:15px; cursor:pointer; }
+  .tag { display:inline-block; font-size:12px; color:var(--good); background:var(--good-soft); padding:2px 8px; border-radius:20px; margin-inline-start:6px; vertical-align:middle; font-weight:500; }
+  label { display:block; font-size:14px; color:var(--soft); margin:12px 2px 6px; }
+  input, select { width:100%; height:48px; font:inherit; font-size:16px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:0 14px; }
+  input:focus, select:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  .btn { width:100%; height:48px; border:none; border-radius:12px; background:var(--accent); color:#fff; font:inherit; font-size:16px; font-weight:600; cursor:pointer; margin-top:16px; }
+  .btn:disabled { opacity:.5; }
+  .err { color:#c0392b; font-size:14px; min-height:20px; margin:8px 2px 0; }
+  #login { max-width:400px; margin:10vh auto 0; }
+  #login .logo { font-size:28px; text-align:center; display:block; }
+  #login p { text-align:center; color:var(--soft); margin:6px 0 18px; }
+  .skeleton { background:linear-gradient(90deg,var(--surface2),var(--line),var(--surface2)); background-size:200% 100%; animation:sh 1.2s infinite; border-radius:16px; height:96px; }
+  @keyframes sh { to { background-position:-200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation:none; } }
 </style>
 </head>
 <body>
 <main>
   <section id="login" class="hidden">
-    <div class="brand">RQN</div>
-    <p class="note">سجّل دخول بحسابك. تسجّل مرة وحدة بس لكل جهاز.</p>
-    <input id="email" type="email" placeholder="الإيميل" autocomplete="username">
-    <input id="password" type="password" placeholder="كلمة المرور" autocomplete="current-password">
-    <button class="primary" id="send">دخول</button>
-    <p id="loginMsg" class="note"></p>
+    <span class="logo">RQN</span>
+    <p>لوحة التطبيقات</p>
+    <div class="card">
+      <label for="email">الإيميل</label>
+      <input id="email" type="email" inputmode="email" autocomplete="username" dir="ltr">
+      <label for="password">كلمة المرور</label>
+      <input id="password" type="password" autocomplete="current-password" dir="ltr">
+      <button class="btn" id="send">دخول</button>
+      <div class="err" id="loginMsg" role="alert"></div>
+    </div>
   </section>
 
   <section id="dash" class="hidden">
-    <header>
-      <div class="brand">RQN <small id="crumb">كل التطبيقات</small></div>
-      <div>
-        <select id="range"><option value="7">أسبوع</option><option value="30" selected>شهر</option><option value="365">سنة</option><option value="all">كامل</option></select>
-        <button id="refresh">تحديث</button>
-        <button id="usersBtn" class="hidden">المستخدمين</button>
-        <button id="logout">خروج</button>
+    <div class="bar">
+      <div class="brand"><span class="logo">RQN</span><span class="crumb" id="crumb"></span></div>
+      <div class="icons">
+        <button class="ib" id="refresh" aria-label="تحديث"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+        <button class="ib hidden" id="usersBtn" aria-label="المستخدمين"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.4 3.4-5.5 6.5-5.5s5.7 2.1 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18.5 14.8c1.6.8 2.6 2.6 3 5.2"/></svg></button>
+        <button class="ib" id="logout" aria-label="خروج"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 8l-4 4 4 4"/><path d="M5 12h10"/></svg></button>
       </div>
-    </header>
-    <p id="status" class="note"></p>
+    </div>
+    <div class="seg" id="range" role="tablist">
+      <button data-v="7">أسبوع</button><button data-v="30" class="on">شهر</button><button data-v="365">سنة</button><button data-v="all">كامل</button>
+    </div>
+    <div class="status" id="status"></div>
     <div id="view"></div>
   </section>
 </main>
@@ -66,20 +117,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="config.js"></script>
 <script>
-const sb = supabase.createClient(MARS_CFG.url, MARS_CFG.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const DEMO = new URLSearchParams(location.search).has("demo"); // local layout check with demo.json (never uploaded)
+const sb = supabase.createClient(MARS_CFG.url, MARS_CFG.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
 const $ = (id) => document.getElementById(id);
-const fmt = (n) => new Intl.NumberFormat("ar-SA").format(Math.round(n));
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf = new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 0 });
+const fmt = (n) => nf.format(Math.round(n));
 const sar = (n) => fmt(n) + " ر.س";
 const FX = { SAR:1, USD:3.75, EUR:4.1, GBP:4.8, AED:1.02, KWD:12.2, QAR:1.03, BHD:9.95, OMR:9.74, EGP:0.077, JOD:5.3 };
 const countryName = (c) => { try { return new Intl.DisplayNames(["ar"], { type: "region" }).of(c) || c; } catch { return c; } };
 const DL = new Set(["1","1F","1T","F1","1E","1EP","1EU"]), RE = new Set(["3","3F","3T","F3"]), UPD = new Set(["7","7F","7T","F7"]);
 const isIAP = (t) => t.startsWith("IA") || t === "FI1";
-// Apps whose own backend reports extra numbers, by App Store SKU.
-const EXTRA = { mars001: "mars" };
-let data = null, charts = {};
+const EXTRA = { mars001: "mars" }; // apps whose own backend reports more, by App Store SKU
+const COLORS = () => [css("--accent"), css("--c2"), css("--good"), css("--c3")];
+const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+let data = null, charts = {}, range = "30";
 
 async function show() {
-  const { data: { session } } = await sb.auth.getSession();
+  const session = DEMO || (await sb.auth.getSession()).data.session;
   $("login").classList.toggle("hidden", !!session);
   $("dash").classList.toggle("hidden", !session);
   if (session && !data) load();
@@ -87,40 +142,45 @@ async function show() {
 $("send").onclick = async () => {
   const email = $("email").value.trim(), password = $("password").value;
   if (!email || !password) { $("loginMsg").textContent = "اكتب الإيميل وكلمة المرور."; return; }
-  $("loginMsg").textContent = "…";
+  $("send").disabled = true; $("loginMsg").textContent = "";
   const { error } = await sb.auth.signInWithPassword({ email, password });
-  $("loginMsg").textContent = error ? "الإيميل أو كلمة المرور غلط." : "";
+  $("send").disabled = false;
+  if (error) $("loginMsg").textContent = "الإيميل أو كلمة المرور غلط.";
 };
 $("password").onkeydown = (e) => { if (e.key === "Enter") $("send").click(); };
 $("usersBtn").onclick = () => { location.hash = "users"; };
-$("logout").onclick = async () => { await sb.auth.signOut(); data = null; show(); };
+$("logout").onclick = async () => { if (!confirm("تسجّل خروج؟")) return; await sb.auth.signOut(); data = null; show(); };
 $("refresh").onclick = () => load();
-$("range").onchange = () => load();
-window.onhashchange = () => render();
+document.querySelectorAll("#range button").forEach((b) => b.onclick = () => {
+  document.querySelectorAll("#range button").forEach((x) => x.classList.toggle("on", x === b));
+  range = b.dataset.v; load();
+});
+window.onhashchange = () => { render(); scrollTo(0, 0); };
 
 async function load() {
   $("status").textContent = "جاري التحميل…";
-  const all = $("range").value === "all";
-  const { data: d, error } = await sb.functions.invoke("dashboard-stats", { body: { days: all ? 365 : Number($("range").value) } });
-  if (error) { $("status").textContent = "ما قدرنا نجيب الأرقام." + (error.context?.status === 403 ? " هالحساب ما له صلاحية." : ""); return; }
-  // "Full": from the first day any app had a sale or download (Apple keeps daily reports for a year).
-  if (all) { const i = d.store.days.map((x) => x.rows.length > 0).lastIndexOf(true); if (i >= 0) d.store.days = d.store.days.slice(0, i + 1); }
+  if (!data) $("view").innerHTML = '<div class="grid2"><div class="skeleton"></div><div class="skeleton"></div></div>';
+  let d, error;
+  if (DEMO) { d = await (await fetch("demo.json")).json(); d.store.days = d.store.days.slice(0, range === "all" ? 9999 : Number(range)); }
+  else ({ data: d, error } = await sb.functions.invoke("dashboard-stats", { body: range === "all" ? { all: true } : { days: Number(range) } }));
+  if (error) { $("status").textContent = error.context?.status === 403 ? "هالحساب ما له صلاحية." : "ما قدرنا نجيب الأرقام. جرّب تحديث."; return; }
+  // "Full" starts at the first day anything happened.
+  if (range === "all") { const i = d.store.days.map((x) => x.rows.length > 0).lastIndexOf(true); if (i >= 0) d.store.days = d.store.days.slice(0, i + 1); }
   data = d;
   $("usersBtn").classList.toggle("hidden", d.role !== "admin");
-  $("status").textContent = "آخر تحديث: " + new Date(d.generatedAt).toLocaleString("ar-SA") + " · أرقام App Store تتأخر يوم" + (d.store.error ? " · ⚠️ تعذّر جلب بعض الأيام" : "");
+  const t = new Date(d.generatedAt).toLocaleTimeString("ar-SA", { hour: "numeric", minute: "2-digit" });
+  $("status").textContent = `تحدّث ${t} · أرقام App Store لين أمس` + (d.store.error ? " · بعض الأيام ما وصلت" : "");
   render();
 }
 
-/// Per-app summary from the store rows, grouped by SKU.
 function summarise() {
   const apps = new Map();
   const get = (sku) => apps.get(sku) ?? apps.set(sku, { sku, name: "", dl: 0, re: 0, upd: 0, iap: 0, proceeds: 0, plans: {}, countries: {}, daily: {} }).get(sku);
   const days = data.store.days.map((d) => d.day).reverse();
   for (const day of data.store.days) for (const r of day.rows) {
     if (!r.sku) continue;
-    const a = get(r.sku);
+    const a = get(r.sku), p = r.proceeds * (FX[r.currency] ?? 0);
     if (!isIAP(r.type) && r.app) a.name = r.app;
-    const p = r.proceeds * (FX[r.currency] ?? 0);
     a.proceeds += p;
     if (DL.has(r.type)) { a.dl += r.units; a.countries[r.country] = (a.countries[r.country] ?? 0) + r.units; a.daily[day.day] = (a.daily[day.day] ?? 0) + r.units; }
     else if (RE.has(r.type)) a.re += r.units;
@@ -134,65 +194,72 @@ function render() {
   if (!data) return;
   Object.values(charts).forEach((c) => c.destroy()); charts = {};
   const { apps, days } = summarise();
-  const sku = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
-  if (sku === "users") return renderUsers();
-  const app = apps.find((a) => a.sku === sku);
+  const key = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+  $("range").classList.toggle("hidden", key === "users");
+  if (key === "users") return renderUsers();
+  const app = apps.find((a) => a.sku === key);
   return app ? renderApp(app, days) : renderAll(apps, days);
 }
 
+const stat = (k, v, s = "", cls = "") => `<div class="stat ${cls}"><div class="k">${k}</div><div class="v num">${v}</div>${s ? `<div class="s">${s}</div>` : ""}</div>`;
+const shortName = (n) => n.split(/\s+[-–]\s+/)[0];
+
 function renderAll(apps, days) {
-  $("crumb").textContent = "كل التطبيقات";
-  const tot = apps.reduce((s, a) => ({ dl: s.dl + a.dl, iap: s.iap + a.iap, p: s.p + a.proceeds, upd: s.upd + a.upd }), { dl: 0, iap: 0, p: 0, upd: 0 });
+  $("crumb").textContent = "";
+  const tot = apps.reduce((s, a) => ({ dl: s.dl + a.dl, iap: s.iap + a.iap, p: s.p + a.proceeds }), { dl: 0, iap: 0, p: 0 });
+  const cs = COLORS();
   $("view").innerHTML = `
-    <div class="tiles">
-      <div class="tile"><div class="k">التحميلات</div><div class="v">${fmt(tot.dl)}</div><div class="s">كل التطبيقات</div></div>
-      <div class="tile"><div class="k">الأرباح (صافي تقريبي)</div><div class="v">${sar(tot.p)}</div><div class="s">بعد عمولة Apple</div></div>
-      <div class="tile"><div class="k">اشتراكات ومشتريات</div><div class="v">${fmt(tot.iap)}</div><div class="s">تشمل بدايات التجربة</div></div>
-      <div class="tile"><div class="k">التطبيقات</div><div class="v">${fmt(apps.length)}</div><div class="s">على App Store</div></div>
+    <div class="grid2 wide">
+      ${stat("الأرباح", sar(tot.p), "صافي تقريبي", "hero")}
+      ${stat("التحميلات", fmt(tot.dl), "تحميل أول مرة")}
+      ${stat("الاشتراكات", fmt(tot.iap), "تشمل بدايات التجربة")}
+      ${stat("التطبيقات", fmt(apps.length), "على App Store")}
     </div>
     <h2>التطبيقات</h2>
     <div class="apps">${apps.map((a, i) => `
-      <div class="app" onclick="location.hash='${encodeURIComponent(a.sku)}'">
-        <div class="top"><div class="name">${a.name}</div><div class="go">التفاصيل ←</div></div>
-        <div class="row"><div><div class="k">تحميلات</div><div class="v">${fmt(a.dl)}</div></div><div><div class="k">اشتراكات</div><div class="v">${fmt(a.iap)}</div></div><div><div class="k">أرباح</div><div class="v">${fmt(a.proceeds)}</div></div></div>
-        <canvas id="spark${i}" height="60"></canvas>
-      </div>`).join("") || '<p class="note">ما فيه بيانات للحين.</p>'}</div>
+      <button class="app" onclick="location.hash='${encodeURIComponent(a.sku)}'">
+        <div class="head"><div class="name"><span class="dot" style="background:${cs[i % cs.length]}"></span>${shortName(a.name)}</div>${CHEV}</div>
+        <div class="nums">
+          <div><div class="k">تحميلات</div><div class="v num">${fmt(a.dl)}</div></div>
+          <div><div class="k">اشتراكات</div><div class="v num">${fmt(a.iap)}</div></div>
+          <div><div class="k">أرباح</div><div class="v num">${fmt(a.proceeds)}</div></div>
+        </div>
+        <div class="spark"><canvas id="sp${i}"></canvas></div>
+      </button>`).join("") || '<div class="card note">ما فيه بيانات للحين.</div>'}</div>
     <h2>التحميلات يوميًا</h2>
-    <div class="panel"><canvas id="cAll"></canvas></div>`;
-  const labels = days.map((d) => d.slice(5));
-  const colors = ["#d97340", "#7fb069", "#b9b0a2", "#6fa8dc", "#c27ba0"];
-  apps.forEach((a, i) => spark(`spark${i}`, labels, days.map((d) => a.daily[d] ?? 0), colors[i % colors.length]));
-  chart("cAll", "bar", labels, apps.map((a, i) => ({ label: a.name, data: days.map((d) => a.daily[d] ?? 0), backgroundColor: colors[i % colors.length], stack: "s" })), true);
+    <div class="card"><div class="chart"><canvas id="cAll"></canvas></div></div>`;
+  apps.forEach((a, i) => spark(`sp${i}`, days.map((d) => a.daily[d] ?? 0), cs[i % cs.length]));
+  chart("cAll", "bar", days.map(dayLabel), apps.map((a, i) => ({ label: shortName(a.name), data: days.map((d) => a.daily[d] ?? 0), backgroundColor: cs[i % cs.length], borderRadius: 3, stack: "s" })));
 }
 
 function renderApp(a, days) {
-  $("crumb").textContent = a.name;
-  const labels = days.map((d) => d.slice(5));
-  const countries = Object.entries(a.countries).sort((x, y) => y[1] - x[1]).slice(0, 12);
+  $("crumb").textContent = shortName(a.name);
+  const countries = Object.entries(a.countries).sort((x, y) => y[1] - x[1]).slice(0, 10);
+  const maxC = countries[0]?.[1] || 1;
   const plans = Object.entries(a.plans).sort((x, y) => y[1].units - x[1].units);
-  const extra = EXTRA[a.sku];
+  const mars = EXTRA[a.sku] === "mars";
   $("view").innerHTML = `
-    <button class="back" onclick="location.hash=''">→ كل التطبيقات</button>
-    <div class="tiles" style="margin-top:12px">
-      <div class="tile"><div class="k">تحميلات جديدة</div><div class="v">${fmt(a.dl)}</div><div class="s">أمس: ${fmt(a.daily[days[days.length - 1]] ?? 0)}</div></div>
-      <div class="tile"><div class="k">إعادة تحميل</div><div class="v">${fmt(a.re)}</div></div>
-      <div class="tile"><div class="k">تحديثات</div><div class="v">${fmt(a.upd)}</div></div>
-      <div class="tile"><div class="k">الأرباح (صافي تقريبي)</div><div class="v">${sar(a.proceeds)}</div></div>
+    <button class="back" onclick="location.hash=''"><span>→</span> كل التطبيقات</button>
+    <div class="grid2 wide">
+      ${stat("الأرباح", sar(a.proceeds), "صافي تقريبي", "hero")}
+      ${stat("تحميلات جديدة", fmt(a.dl), "أمس: " + fmt(a.daily[days[days.length - 1]] ?? 0))}
+      ${stat("إعادة تحميل", fmt(a.re))}
+      ${stat("تحديثات", fmt(a.upd))}
     </div>
     <h2>التحميلات يوميًا</h2>
-    <div class="panel"><canvas id="cApp"></canvas></div>
-    <div class="two">
-      <div><h2>الاشتراكات والمشتريات (App Store)</h2><div class="panel"><table><thead><tr><th>الباقة</th><th>العدد</th><th>الأرباح</th></tr></thead><tbody>${plans.map(([n, v]) => `<tr><td>${n}</td><td class="n">${fmt(v.units)}</td><td class="n">${sar(v.p)}</td></tr>`).join("") || '<tr><td colspan="3" class="note">ما فيه للحين.</td></tr>'}</tbody></table><p class="note">العدد يشمل بدايات التجربة المجانية (بدون أرباح).</p></div></div>
-      <div><h2>الدول</h2><div class="panel"><table><thead><tr><th>الدولة</th><th>تحميلات</th></tr></thead><tbody>${countries.map(([c, n]) => `<tr><td>${countryName(c)}</td><td class="n">${fmt(n)}</td></tr>`).join("") || '<tr><td colspan="2" class="note">ما فيه للحين.</td></tr>'}</tbody></table></div></div>
-    </div>
-    ${extra === "mars" ? marsSection() : '<p class="note" style="margin-top:24px">هالتطبيق ما له بيانات استخدام مربوطة. أرقام App Store بس.</p>'}`;
-  chart("cApp", "bar", labels, [{ label: "تحميلات", data: days.map((d) => a.daily[d] ?? 0), backgroundColor: "#d97340" }]);
-  if (extra === "mars") {
+    <div class="card"><div class="chart"><canvas id="cApp"></canvas></div></div>
+    <h2>الاشتراكات والمشتريات</h2>
+    <div class="card"><div class="rows">${plans.map(([n, v]) => `<div class="row"><div class="l">${n}</div><div class="r"><b class="num">${fmt(v.units)}</b><span>·</span><span class="num">${sar(v.p)}</span></div></div>`).join("") || '<div class="note">ما فيه للحين.</div>'}</div>
+      <p class="note">العدد يشمل بدايات التجربة المجانية، وهذي بدون أرباح.</p></div>
+    <h2>الدول</h2>
+    <div class="card"><div class="rows">${countries.map(([c, n]) => `<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><span>${countryName(c)}</span><b class="num">${fmt(n)}</b></div><div class="bar-fill"><i style="width:${Math.max(4, n / maxC * 100)}%"></i></div></div>`).join("") || '<div class="note">ما فيه للحين.</div>'}</div></div>
+    ${mars ? marsSection() : ""}`;
+  chart("cApp", "bar", days.map(dayLabel), [{ label: "تحميلات", data: days.map((d) => a.daily[d] ?? 0), backgroundColor: css("--accent"), borderRadius: 3 }]);
+  if (mars) {
     const s = (p) => days.map((d) => Object.entries(data.usage).filter(([fn]) => fn.startsWith(p)).reduce((t, [, v]) => t + (v[d] ?? 0), 0));
-    chart("cUsage", "line", labels, [
-      { label: "البحث عن كلمة", data: s("lookup-word"), borderColor: "#7fb069", tension: .3 },
-      { label: "اسمعها من الناس", data: s("youglish"), borderColor: "#d97340", tension: .3 },
-      { label: "كلمات جديدة من الذكاء", data: s("generate-words"), borderColor: "#b9b0a2", tension: .3 },
+    const line = (label, d, c) => ({ label, data: d, borderColor: c, backgroundColor: c, tension: .35, cubicInterpolationMode: "monotone", pointRadius: 0, borderWidth: 2 });
+    chart("cUsage", "line", days.map(dayLabel), [
+      line("اسمعها من الناس", s("youglish"), css("--accent")), line("البحث", s("lookup-word"), css("--c2")), line("كلمات جديدة", s("generate-words"), css("--good")),
     ]);
   }
 }
@@ -200,68 +267,69 @@ function renderApp(a, days) {
 function marsSection() {
   const sub = data.subscriptions, acc = data.accounts, bank = data.bank;
   return `
-    <h2>مارس: المشتركين (من خادم مارس، مباشر)</h2>
-    <div class="tiles">
-      <div class="tile"><div class="k">نشطين الحين</div><div class="v">${fmt(sub.active)}</div></div>
-      <div class="tile"><div class="k">شهري</div><div class="v">${fmt(sub.monthly)}</div></div>
-      <div class="tile"><div class="k">سنوي</div><div class="v">${fmt(sub.yearly)}</div></div>
-      <div class="tile"><div class="k">انتهى اشتراكهم</div><div class="v">${fmt(sub.lapsed)}</div></div>
+    <h2>المشتركين <span class="tag">مباشر</span></h2>
+    <div class="grid2 wide">
+      ${stat("نشطين الحين", fmt(sub.active), "", "hero")}${stat("شهري", fmt(sub.monthly))}${stat("سنوي", fmt(sub.yearly))}${stat("انتهى اشتراكهم", fmt(sub.lapsed))}
     </div>
-    <h2>مارس: المستخدمين</h2>
-    <div class="tiles">
-      <div class="tile"><div class="k">حسابات مسجّلة</div><div class="v">${fmt(acc.total)}</div><div class="s">جديد بالفترة: ${fmt(acc.new)}</div></div>
-      <div class="tile"><div class="k">تقدّم محفوظ</div><div class="v">${fmt(acc.synced)}</div></div>
-      <div class="tile"><div class="k">نشطين هالأسبوع</div><div class="v">${fmt(acc.activeWeek)}</div><div class="s">من المسجّلين</div></div>
-    </div>
-    <h2>مارس: الاستخدام يوميًا</h2>
-    <div class="panel"><canvas id="cUsage"></canvas></div>
-    <h2>مارس: القاعدة</h2>
-    <div class="tiles">
-      <div class="tile"><div class="k">الكلمات</div><div class="v">${fmt(bank.words)}</div></div>
-      <div class="tile"><div class="k">الإجابات الجاهزة</div><div class="v">${fmt(bank.answers)}</div></div>
-    </div>`;
+    <h2>المستخدمين</h2>
+    <div class="grid2">${stat("حسابات مسجّلة", fmt(acc.total), "جديد بالفترة: " + fmt(acc.new))}${stat("نشطين هالأسبوع", fmt(acc.activeWeek), "من المسجّلين")}</div>
+    <h2>الاستخدام يوميًا</h2>
+    <div class="card"><div class="chart"><canvas id="cUsage"></canvas></div></div>
+    <h2>القاعدة</h2>
+    <div class="grid2">${stat("الكلمات", fmt(bank.words))}${stat("الإجابات الجاهزة", fmt(bank.answers))}</div>`;
 }
 
 async function renderUsers() {
   $("crumb").textContent = "المستخدمين";
-  $("view").innerHTML = `<button class="back" onclick="location.hash=''">→ كل التطبيقات</button>
-    <h2>اللي يقدرون يدخلون اللوحة</h2><div class="panel"><table id="mt"><thead><tr><th>الإيميل</th><th>الصلاحية</th><th></th></tr></thead><tbody><tr><td class="note">…</td></tr></tbody></table></div>
-    <h2>إضافة مستخدم</h2><div class="panel">
-      <input id="nEmail" type="email" placeholder="الإيميل" style="width:100%;margin-bottom:8px;direction:ltr">
-      <input id="nPass" type="text" placeholder="كلمة مرور (٨ أحرف أو أكثر)" style="width:100%;margin-bottom:8px;direction:ltr" autocomplete="off">
-      <select id="nRole"><option value="viewer">يشوف بس</option><option value="admin">مدير (يضيف ويحذف)</option></select>
-      <button class="primary" id="nAdd">إضافة</button> <span id="nMsg" class="note"></span>
-      <p class="note">أعطِ الشخص الإيميل وكلمة المرور بنفسك. لو كان عنده حساب في مارس بنفس الإيميل، تنضاف له كلمة المرور هذي.</p></div>`;
+  $("view").innerHTML = `
+    <button class="back" onclick="location.hash=''"><span>→</span> رجوع</button>
+    <h2>اللي يقدرون يدخلون</h2>
+    <div class="card"><div class="rows" id="mt"><div class="note">جاري التحميل…</div></div></div>
+    <h2>إضافة مستخدم</h2>
+    <div class="card">
+      <label for="nEmail">الإيميل</label><input id="nEmail" type="email" inputmode="email" dir="ltr" autocomplete="off">
+      <label for="nPass">كلمة المرور</label><input id="nPass" type="text" dir="ltr" autocomplete="off" placeholder="٨ أحرف أو أكثر">
+      <label for="nRole">الصلاحية</label><select id="nRole"><option value="viewer">يشوف بس</option><option value="admin">مدير، يضيف ويحذف</option></select>
+      <button class="btn" id="nAdd">إضافة</button><div class="err" id="nMsg" role="alert"></div>
+      <p class="note">أعطِ الشخص الإيميل وكلمة المرور بنفسك.</p>
+    </div>`;
   const call = (body) => sb.functions.invoke("dashboard-stats", { body });
   const list = async () => {
-    const { data: d } = await call({ action: "members" });
-    $("mt").tBodies[0].innerHTML = (d?.members ?? []).map((m) => `<tr><td style="direction:ltr;text-align:right">${m.email}</td><td>${m.role === "admin" ? "مدير" : "يشوف بس"}</td><td>${m.email === d.me ? '<span class="note">أنت</span>' : `<button data-rm="${m.email}">حذف</button>`}</td></tr>`).join("");
+    const { data: d } = DEMO ? { data: { members: [{ email: "naif@rqn.sa", role: "admin" }, { email: "someone@rqn.sa", role: "viewer" }], me: "naif@rqn.sa" } } : await call({ action: "members" });
+    $("mt").innerHTML = (d?.members ?? []).map((m) => `<div class="row"><div class="l" dir="ltr" style="text-align:right">${m.email}</div><div class="r">${m.role === "admin" ? "مدير" : "يشوف بس"}${m.email === d.me ? " · أنت" : `<button class="ib" data-rm="${m.email}" aria-label="حذف ${m.email}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/></svg></button>`}</div></div>`).join("");
     document.querySelectorAll("[data-rm]").forEach((b) => b.onclick = async () => { if (confirm("تحذف " + b.dataset.rm + "؟")) { await call({ action: "remove", email: b.dataset.rm }); list(); } });
   };
   $("nAdd").onclick = async () => {
     const email = $("nEmail").value.trim(), password = $("nPass").value;
     if (!email.includes("@")) { $("nMsg").textContent = "اكتب إيميل صحيح."; return; }
     if (password.length < 8) { $("nMsg").textContent = "كلمة المرور ٨ أحرف أو أكثر."; return; }
-    $("nMsg").textContent = "…";
+    $("nAdd").disabled = true; $("nMsg").textContent = "";
     const { error } = await call({ action: "add", email, password, role: $("nRole").value });
-    $("nMsg").textContent = error ? "ما انضاف." : "انضاف ✓"; if (!error) { $("nEmail").value = ""; $("nPass").value = ""; list(); }
+    $("nAdd").disabled = false;
+    $("nMsg").style.color = error ? "" : css("--good");
+    $("nMsg").textContent = error ? "ما انضاف. تأكد من الإيميل." : "انضاف ✓";
+    if (!error) { $("nEmail").value = ""; $("nPass").value = ""; list(); }
   };
   list();
 }
 
-const axis = { ticks: { color: "#80786c" }, grid: { color: "#28251f" } };
-function chart(id, type, labels, datasets, stacked = false) {
+const dayLabel = (d) => new Date(d + "T00:00:00").toLocaleDateString("ar-SA", { day: "numeric", month: "short" });
+function chart(id, type, labels, datasets) {
+  const tick = css("--muted");
   charts[id] = new Chart($(id), { type, data: { labels, datasets }, options: {
-    plugins: { legend: { labels: { color: "#b9b0a2", font: { family: "IBM Plex Sans Arabic" } } } },
-    scales: { x: { ...axis, stacked }, y: { ...axis, stacked, beginAtZero: true, ticks: { ...axis.ticks, precision: 0 } } },
+    responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+    plugins: { legend: { display: datasets.length > 1, position: "bottom", rtl: true, labels: { color: css("--soft"), boxWidth: 10, boxHeight: 10, usePointStyle: true, font: { family: "IBM Plex Sans Arabic", size: 13 } } },
+      tooltip: { rtl: true, titleFont: { family: "IBM Plex Sans Arabic" }, bodyFont: { family: "IBM Plex Sans Arabic" } } },
+    scales: { x: { stacked: type === "bar", grid: { display: false }, ticks: { color: tick, maxTicksLimit: 6, maxRotation: 0, font: { size: 11 } } },
+              y: { stacked: type === "bar", beginAtZero: true, grid: { color: css("--line") }, border: { display: false }, ticks: { color: tick, precision: 0, maxTicksLimit: 4, font: { size: 11 } } } },
   } });
 }
-function spark(id, labels, values, color) {
-  charts[id] = new Chart($(id), { type: "line", data: { labels, datasets: [{ data: values, borderColor: color, borderWidth: 2, pointRadius: 0, tension: .35, fill: false }] },
-    options: { plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: true } }, events: [] } });
+function spark(id, values, color) {
+  charts[id] = new Chart($(id), { type: "line", data: { labels: values.map((_, i) => i), datasets: [{ data: values, borderColor: color, borderWidth: 2, pointRadius: 0, tension: .4, cubicInterpolationMode: "monotone", fill: true, backgroundColor: color + "22" }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: true } }, events: [] } });
 }
 
-sb.auth.onAuthStateChange(() => show());
+if (!DEMO) sb.auth.onAuthStateChange(() => show());
 show();
 </script>
 </body>
