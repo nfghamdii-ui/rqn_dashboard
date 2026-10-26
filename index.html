@@ -121,7 +121,7 @@ const DEMO = new URLSearchParams(location.search).has("demo"); // local layout c
 const sb = supabase.createClient(MARS_CFG.url, MARS_CFG.key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
 const $ = (id) => document.getElementById(id);
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const nf = new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 0 });
+const nf = new Intl.NumberFormat("ar-SA-u-nu-latn", { maximumFractionDigits: 0 });
 const fmt = (n) => nf.format(Math.round(n));
 const sar = (n) => fmt(n) + " ر.س";
 const FX = { SAR:1, USD:3.75, EUR:4.1, GBP:4.8, AED:1.02, KWD:12.2, QAR:1.03, BHD:9.95, OMR:9.74, EGP:0.077, JOD:5.3 };
@@ -133,8 +133,10 @@ const COLORS = () => [css("--accent"), css("--c2"), css("--good"), css("--c3")];
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
 let data = null, charts = {}, range = "30";
 
-async function show() {
-  const session = DEMO || (await sb.auth.getSession()).data.session;
+// Takes the session the auth event hands over: calling back into sb.auth from
+// inside onAuthStateChange deadlocks supabase-js when a stored token needs refreshing.
+function show(session) {
+  session = DEMO || session;
   $("login").classList.toggle("hidden", !!session);
   $("dash").classList.toggle("hidden", !session);
   if (session && !data) load();
@@ -149,7 +151,7 @@ $("send").onclick = async () => {
 };
 $("password").onkeydown = (e) => { if (e.key === "Enter") $("send").click(); };
 $("usersBtn").onclick = () => { location.hash = "users"; };
-$("logout").onclick = async () => { if (!confirm("تسجّل خروج؟")) return; await sb.auth.signOut(); data = null; show(); };
+$("logout").onclick = async () => { if (!confirm("تسجّل خروج؟")) return; data = null; await sb.auth.signOut(); };
 $("refresh").onclick = () => load();
 document.querySelectorAll("#range button").forEach((b) => b.onclick = () => {
   document.querySelectorAll("#range button").forEach((x) => x.classList.toggle("on", x === b));
@@ -163,12 +165,14 @@ async function load() {
   let d, error;
   if (DEMO) { d = await (await fetch("demo.json")).json(); d.store.days = d.store.days.slice(0, range === "all" ? 9999 : Number(range)); }
   else ({ data: d, error } = await sb.functions.invoke("dashboard-stats", { body: range === "all" ? { all: true } : { days: Number(range) } }));
+  // A session that can't be refreshed any more: back to the sign-in form.
+  if (error?.context?.status === 401) { data = null; await sb.auth.signOut(); return; }
   if (error) { $("status").textContent = error.context?.status === 403 ? "هالحساب ما له صلاحية." : "ما قدرنا نجيب الأرقام. جرّب تحديث."; return; }
   // "Full" starts at the first day anything happened.
   if (range === "all") { const i = d.store.days.map((x) => x.rows.length > 0).lastIndexOf(true); if (i >= 0) d.store.days = d.store.days.slice(0, i + 1); }
   data = d;
   $("usersBtn").classList.toggle("hidden", d.role !== "admin");
-  const t = new Date(d.generatedAt).toLocaleTimeString("ar-SA", { hour: "numeric", minute: "2-digit" });
+  const t = new Date(d.generatedAt).toLocaleTimeString("ar-SA-u-nu-latn", { hour: "numeric", minute: "2-digit" });
   $("status").textContent = `تحدّث ${t} · أرقام App Store لين أمس` + (d.store.error ? " · بعض الأيام ما وصلت" : "");
   render();
 }
@@ -269,7 +273,8 @@ function marsSection() {
   return `
     <h2>المشتركين <span class="tag">مباشر</span></h2>
     <div class="grid2 wide">
-      ${stat("نشطين الحين", fmt(sub.active), "", "hero")}${stat("شهري", fmt(sub.monthly))}${stat("سنوي", fmt(sub.yearly))}${stat("انتهى اشتراكهم", fmt(sub.lapsed))}
+      ${stat("يدفعون الحين", fmt(sub.paying), `شهري ${fmt(sub.monthly)} · سنوي ${fmt(sub.yearly)}`, "hero")}${stat("بفترة التجربة", fmt(sub.trial), sub.trialCancelled ? `ألغى التجديد منهم: ${fmt(sub.trialCancelled)}` : "تنتهي وتتحوّل اشتراك")}
+      ${stat("خلصت تجربتهم وما اشتركوا", fmt(sub.trialEnded))}${stat("دفعوا وبعدين وقّفوا", fmt(sub.lapsed), sub.cancelling ? `يدفعون وألغوا التجديد: ${fmt(sub.cancelling)}` : "")}
     </div>
     <h2>المستخدمين</h2>
     <div class="grid2">${stat("حسابات مسجّلة", fmt(acc.total), "جديد بالفترة: " + fmt(acc.new))}${stat("نشطين هالأسبوع", fmt(acc.activeWeek), "من المسجّلين")}</div>
@@ -288,7 +293,7 @@ async function renderUsers() {
     <h2>إضافة مستخدم</h2>
     <div class="card">
       <label for="nEmail">الإيميل</label><input id="nEmail" type="email" inputmode="email" dir="ltr" autocomplete="off">
-      <label for="nPass">كلمة المرور</label><input id="nPass" type="text" dir="ltr" autocomplete="off" placeholder="٨ أحرف أو أكثر">
+      <label for="nPass">كلمة المرور</label><input id="nPass" type="text" dir="ltr" autocomplete="off" placeholder="8 أحرف أو أكثر">
       <label for="nRole">الصلاحية</label><select id="nRole"><option value="viewer">يشوف بس</option><option value="admin">مدير، يضيف ويحذف</option></select>
       <button class="btn" id="nAdd">إضافة</button><div class="err" id="nMsg" role="alert"></div>
       <p class="note">أعطِ الشخص الإيميل وكلمة المرور بنفسك.</p>
@@ -302,7 +307,7 @@ async function renderUsers() {
   $("nAdd").onclick = async () => {
     const email = $("nEmail").value.trim(), password = $("nPass").value;
     if (!email.includes("@")) { $("nMsg").textContent = "اكتب إيميل صحيح."; return; }
-    if (password.length < 8) { $("nMsg").textContent = "كلمة المرور ٨ أحرف أو أكثر."; return; }
+    if (password.length < 8) { $("nMsg").textContent = "كلمة المرور 8 أحرف أو أكثر."; return; }
     $("nAdd").disabled = true; $("nMsg").textContent = "";
     const { error } = await call({ action: "add", email, password, role: $("nRole").value });
     $("nAdd").disabled = false;
@@ -313,7 +318,7 @@ async function renderUsers() {
   list();
 }
 
-const dayLabel = (d) => new Date(d + "T00:00:00").toLocaleDateString("ar-SA", { day: "numeric", month: "short" });
+const dayLabel = (d) => new Date(d + "T00:00:00").toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric", month: "short" });
 function chart(id, type, labels, datasets) {
   const tick = css("--muted");
   charts[id] = new Chart($(id), { type, data: { labels, datasets }, options: {
@@ -329,8 +334,9 @@ function spark(id, values, color) {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false, beginAtZero: true } }, events: [] } });
 }
 
-if (!DEMO) sb.auth.onAuthStateChange(() => show());
-show();
+if (DEMO) show(true);
+// Fires once on load with the stored session (INITIAL_SESSION), then on every sign-in and sign-out.
+else sb.auth.onAuthStateChange((_event, session) => setTimeout(() => show(session), 0));
 </script>
 </body>
 </html>
