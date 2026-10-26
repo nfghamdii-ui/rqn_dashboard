@@ -152,7 +152,7 @@ $("send").onclick = async () => {
 $("password").onkeydown = (e) => { if (e.key === "Enter") $("send").click(); };
 $("usersBtn").onclick = () => { location.hash = "users"; };
 $("logout").onclick = async () => { if (!confirm("تسجّل خروج؟")) return; data = null; await sb.auth.signOut(); };
-$("refresh").onclick = () => load();
+$("refresh").onclick = () => { extras = {}; load(); };
 document.querySelectorAll("#range button").forEach((b) => b.onclick = () => {
   document.querySelectorAll("#range button").forEach((x) => x.classList.toggle("on", x === b));
   range = b.dataset.v; load();
@@ -177,19 +177,29 @@ async function load() {
   render();
 }
 
-function summarise() {
+function summarise(list = data.store.days) {
   const apps = new Map();
-  const get = (sku) => apps.get(sku) ?? apps.set(sku, { sku, name: "", dl: 0, re: 0, upd: 0, iap: 0, proceeds: 0, plans: {}, countries: {}, daily: {} }).get(sku);
-  const days = data.store.days.map((d) => d.day).reverse();
-  for (const day of data.store.days) for (const r of day.rows) {
+  const get = (sku) => apps.get(sku) ?? apps.set(sku, { sku, name: "", appId: "", dl: 0, re: 0, upd: 0, iap: 0, proceeds: 0, trials: 0, paidNew: 0, renewals: 0, refunds: 0,
+    plans: {}, countries: {}, devices: {}, versions: {}, daily: {}, dailyP: {} }).get(sku);
+  const add = (o, k, n) => { o[k] = (o[k] ?? 0) + n; };
+  const days = list.map((d) => d.day).reverse();
+  for (const day of list) for (const r of day.rows) {
     if (!r.sku) continue;
     const a = get(r.sku), p = r.proceeds * (FX[r.currency] ?? 0);
-    if (!isIAP(r.type) && r.app) a.name = r.app;
-    a.proceeds += p;
-    if (DL.has(r.type)) { a.dl += r.units; a.countries[r.country] = (a.countries[r.country] ?? 0) + r.units; a.daily[day.day] = (a.daily[day.day] ?? 0) + r.units; }
+    if (!isIAP(r.type) && r.app) { a.name = r.app; if (r.appId) a.appId = r.appId; }
+    a.proceeds += p; add(a.dailyP, day.day, p);
+    if (DL.has(r.type)) { a.dl += r.units; add(a.countries, r.country, r.units); add(a.daily, day.day, r.units); add(a.devices, r.device || "—", r.units); }
     else if (RE.has(r.type)) a.re += r.units;
-    else if (UPD.has(r.type)) a.upd += r.units;
-    else if (isIAP(r.type)) { a.iap += r.units; const k = r.app || "اشتراك"; a.plans[k] = { units: (a.plans[k]?.units ?? 0) + r.units, p: (a.plans[k]?.p ?? 0) + p }; }
+    else if (UPD.has(r.type)) { a.upd += r.units; if (r.version) add(a.versions, r.version, r.units); }
+    else if (isIAP(r.type)) {
+      a.iap += r.units;
+      const pl = a.plans[r.app || "اشتراك"] ??= { units: 0, trials: 0, paid: 0, p: 0 };
+      pl.units += r.units; pl.p += p;
+      // Free-trial starts carry no proceeds; refunds come as negative units.
+      if (r.units < 0) a.refunds -= r.units;
+      else if (!r.proceeds) { a.trials += r.units; pl.trials += r.units; }
+      else { pl.paid += r.units; if (r.sub === "Renewal") a.renewals += r.units; else a.paidNew += r.units; }
+    }
   }
   return { apps: [...apps.values()].filter((a) => a.name).sort((x, y) => y.dl - x.dl), days };
 }
@@ -236,29 +246,61 @@ function renderAll(apps, days) {
   chart("cAll", "bar", days.map(dayLabel), apps.map((a, i) => ({ label: shortName(a.name), data: days.map((d) => a.daily[d] ?? 0), backgroundColor: cs[i % cs.length], borderRadius: 3, stack: "s" })));
 }
 
+const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const pct = (n) => (n * 100).toLocaleString("en-US", { maximumFractionDigits: n < 0.1 ? 1 : 0 }) + "%";
+const DEVICES = { iPhone: "آيفون", iPad: "آيباد", Desktop: "ماك", "Apple TV": "Apple TV", "Apple Vision": "Vision Pro" };
+const SOURCES = [[/search/i, "البحث في المتجر"], [/browse/i, "تصفّح المتجر"], [/web/i, "روابط من مواقع"], [/app ref/i, "من تطبيقات ثانية"], [/event/i, "إشعارات الأحداث"], [/./, "غير معروف"]];
+const sourceName = (s) => SOURCES.find(([re]) => re.test(s))[1];
+/// "↑ 12% عن الفترة اللي قبل", or "" when there is nothing to compare with.
+function delta(cur, prev) {
+  if (prev == null || !data.store.prev?.length) return "";
+  if (!prev) return cur ? "جديد هالفترة" : "";
+  const d = (cur - prev) / prev;
+  return `${d >= 0 ? "↑" : "↓"} ${pct(Math.abs(d))} عن اللي قبلها`;
+}
+const rowsCard = (list, empty = "ما فيه للحين.") => `<div class="card"><div class="rows">${list.join("") || `<div class="note">${empty}</div>`}</div></div>`;
+const barRow = (label, n, max, extra = "") => `<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><span class="l">${label}</span><span class="r"><b class="num">${fmt(n)}</b>${extra}</span></div><div class="bar-fill"><i style="width:${Math.max(4, n / (max || 1) * 100)}%"></i></div></div>`;
+let extras = {};
+
 function renderApp(a, days) {
   $("crumb").textContent = shortName(a.name);
+  const prev = data.store.prev?.length ? summarise(data.store.prev).apps.find((x) => x.sku === a.sku) ?? { dl: 0, proceeds: 0, trials: 0, paidNew: 0 } : null;
   const countries = Object.entries(a.countries).sort((x, y) => y[1] - x[1]).slice(0, 10);
-  const maxC = countries[0]?.[1] || 1;
+  const devices = Object.entries(a.devices).sort((x, y) => y[1] - x[1]);
   const plans = Object.entries(a.plans).sort((x, y) => y[1].units - x[1].units);
   const mars = EXTRA[a.sku] === "mars";
   $("view").innerHTML = `
     <button class="back" onclick="location.hash=''"><span>→</span> كل التطبيقات</button>
     <div class="grid2 wide">
-      ${stat("الأرباح", sar(a.proceeds), "صافي تقريبي", "hero")}
-      ${stat("تحميلات جديدة", fmt(a.dl), "أمس: " + fmt(a.daily[days[days.length - 1]] ?? 0))}
-      ${stat("إعادة تحميل", fmt(a.re))}
+      ${stat("الأرباح", sar(a.proceeds), delta(a.proceeds, prev?.proceeds) || "صافي تقريبي", "hero")}
+      ${stat("تحميلات جديدة", fmt(a.dl), delta(a.dl, prev?.dl) || "أمس: " + fmt(a.daily[days[days.length - 1]] ?? 0))}
+      ${stat("إعادة تحميل", fmt(a.re), "حذفوه ورجعوا نزّلوه")}
       ${stat("تحديثات", fmt(a.upd))}
     </div>
     <h2>التحميلات يوميًا</h2>
     <div class="card"><div class="chart"><canvas id="cApp"></canvas></div></div>
-    <h2>الاشتراكات والمشتريات</h2>
-    <div class="card"><div class="rows">${plans.map(([n, v]) => `<div class="row"><div class="l">${n}</div><div class="r"><b class="num">${fmt(v.units)}</b><span>·</span><span class="num">${sar(v.p)}</span></div></div>`).join("") || '<div class="note">ما فيه للحين.</div>'}</div>
-      <p class="note">العدد يشمل بدايات التجربة المجانية، وهذي بدون أرباح.</p></div>
-    <h2>الدول</h2>
-    <div class="card"><div class="rows">${countries.map(([c, n]) => `<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><span>${countryName(c)}</span><b class="num">${fmt(n)}</b></div><div class="bar-fill"><i style="width:${Math.max(4, n / maxC * 100)}%"></i></div></div>`).join("") || '<div class="note">ما فيه للحين.</div>'}</div></div>
+
+    <h2>المبيعات</h2>
+    <div class="grid2 wide">
+      ${stat("بدأوا تجربة", fmt(a.trials), delta(a.trials, prev?.trials))}
+      ${stat("اشتراك مدفوع جديد", fmt(a.paidNew), delta(a.paidNew, prev?.paidNew) || "أول دفعة")}
+      ${stat("تجديدات", fmt(a.renewals), "دفعوا مرة ثانية")}
+      ${stat("استرجاع", fmt(a.refunds), "رجّعت لهم Apple فلوسهم")}
+    </div>
+    <div class="card" style="margin-top:10px"><div class="chart"><canvas id="cSales"></canvas></div></div>
+    <div style="margin-top:10px">${rowsCard(plans.map(([n, v]) => `<div class="row"><div class="l">${esc(n)}<div class="note" style="margin:2px 0 0">مدفوع ${fmt(v.paid)} · تجربة ${fmt(v.trials)}</div></div><div class="r"><b class="num">${sar(v.p)}</b></div></div>`))}</div>
+
+    <h2>من وين التحميلات</h2>
+    ${rowsCard(countries.map(([c, n]) => barRow(countryName(c), n, countries[0][1])))}
+    <div style="margin-top:10px">${rowsCard(devices.map(([d, n]) => barRow(DEVICES[d] ?? esc(d), n, devices[0][1], `<span class="num">${pct(n / (a.dl || 1))}</span>`)))}</div>
+
+    <h2>صفحة المتجر</h2>
+    <div id="storeBox"><div class="grid2"><div class="skeleton"></div><div class="skeleton"></div></div></div>
+    <h2>التقييمات</h2>
+    <div id="rateBox"><div class="skeleton"></div></div>
     ${mars ? marsSection() : ""}`;
   chart("cApp", "bar", days.map(dayLabel), [{ label: "تحميلات", data: days.map((d) => a.daily[d] ?? 0), backgroundColor: css("--accent"), borderRadius: 3 }]);
+  chart("cSales", "bar", days.map(dayLabel), [{ label: "الأرباح (ر.س)", data: days.map((d) => Math.round(a.dailyP[d] ?? 0)), backgroundColor: css("--good"), borderRadius: 3 }]);
   if (mars) {
     const s = (p) => days.map((d) => Object.entries(data.usage).filter(([fn]) => fn.startsWith(p)).reduce((t, [, v]) => t + (v[d] ?? 0), 0));
     const line = (label, d, c) => ({ label, data: d, borderColor: c, backgroundColor: c, tension: .35, cubicInterpolationMode: "monotone", pointRadius: 0, borderWidth: 2 });
@@ -266,6 +308,46 @@ function renderApp(a, days) {
       line("اسمعها من الناس", s("youglish"), css("--accent")), line("البحث", s("lookup-word"), css("--c2")), line("كلمات جديدة", s("generate-words"), css("--good")),
     ]);
   }
+  loadExtras(a);
+}
+
+/// Ratings, reviews and store-page traffic: fetched when the app page opens.
+async function loadExtras(a) {
+  const n = range === "all" ? 365 : Number(range), k = a.appId + ":" + n;
+  if (!a.appId) { $("storeBox").innerHTML = $("rateBox").innerHTML = '<div class="card note">ما لقينا رقم التطبيق.</div>'; return; }
+  if (!extras[k]) {
+    let x;
+    if (DEMO) x = (await (await fetch("demo.json")).json()).extras;
+    else { const { data: d, error } = await sb.functions.invoke("dashboard-stats", { body: { action: "app", appId: a.appId, days: n } }); x = error ? null : d; }
+    if (!x) { if ($("storeBox")) $("storeBox").innerHTML = $("rateBox").innerHTML = '<div class="card note">ما قدرنا نجيبها الحين. جرّب تحديث.</div>'; return; }
+    extras[k] = x;
+  }
+  if (decodeURIComponent(location.hash.slice(1)) !== a.sku || !$("storeBox")) return; // left the page meanwhile
+  const { ratings: r, store: st } = extras[k];
+
+  const views = st.days.reduce((t, d) => t + d.page_views, 0), imps = st.days.reduce((t, d) => t + d.impressions, 0);
+  const src = {}; st.days.forEach((d) => Object.entries(d.sources).forEach(([s, v]) => { const nm = sourceName(s); src[nm] = (src[nm] ?? 0) + v; }));
+  const srcs = Object.entries(src).sort((x, y) => y[1] - x[1]);
+  const NOTES = { started: "طلبنا التقارير من Apple الحين. تبدأ توصل خلال يوم أو يومين.", waiting: "Apple للحين ما نشرت التقارير. تبدأ توصل خلال يوم أو يومين من أول طلب.",
+    access: "مفتاح App Store Connect الحالي ما يقدر يوصل لتقارير المتجر. يحتاج مفتاح بصلاحية Admin.", error: "ما قدرنا نجيب تقارير المتجر الحين." };
+  $("storeBox").innerHTML = st.days.length ? `
+    <div class="grid2 wide">
+      ${stat("ظهر للناس", fmt(imps), "بالبحث والتصفّح")}${stat("فتحوا صفحته", fmt(views), imps ? pct(views / imps) + " من اللي شافوه" : "")}
+      ${stat("حمّلوه", fmt(a.dl))}${stat("نسبة التحميل", views ? pct(Math.min(a.dl / views, 1)) : "—", "من اللي فتحوا الصفحة", "hero")}
+    </div>
+    <div style="margin-top:10px">${rowsCard(srcs.map(([nm, v]) => barRow(nm, v, srcs[0][1], `<span class="num">${pct(v / (views || 1))}</span>`)))}</div>
+    <p class="note">من وين جو اللي فتحوا الصفحة. أرقام Apple هنا تتأخر يوم أو يومين، والأعداد الصغيرة جدًا ممكن تخفيها Apple للخصوصية.${st.note && st.note !== "started" ? " " + NOTES[st.note] : ""}</p>`
+    : `<div class="card note">${NOTES[st.note] ?? "ما فيه بيانات للحين."}</div>`;
+
+  const stars = (x) => "★".repeat(Math.round(x)) + "☆".repeat(5 - Math.round(x));
+  $("rateBox").innerHTML = r.count ? `
+    <div class="grid2">${stat("التقييم من 5", r.avg.toLocaleString("en-US", { maximumFractionDigits: 1 }), `<span style="color:var(--accent);font-size:15px">${stars(r.avg)}</span>`, "hero")}${stat("عدد التقييمات", fmt(r.count), r.version ? "الإصدار بالمتجر " + esc(r.version) : "")}</div>
+    <div style="margin-top:10px">${rowsCard(r.countries.map((c) => `<div class="row"><div class="l">${countryName(c.country)}</div><div class="r"><span class="num">${c.avg.toLocaleString("en-US", { maximumFractionDigits: 1 })} ★</span><span>·</span><b class="num">${fmt(c.count)}</b></div></div>`))}</div>
+    <h2 style="font-size:15px">آخر المراجعات</h2>
+    ${rowsCard(r.reviews.map((v) => `<div class="row" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px"><b style="min-width:0;overflow-wrap:anywhere">${esc(v.title)}</b><span style="color:var(--accent);flex-shrink:0">${stars(v.stars)}</span></div>
+      <div style="margin-top:4px;overflow-wrap:anywhere;white-space:pre-line">${esc(v.text)}</div><div class="note" style="margin:4px 0 0">${countryName(v.country)} · <span class="num" dir="ltr">${esc(v.date)}</span>${v.version ? ` · إصدار <span class="num">${esc(v.version)}</span>` : ""}</div></div>`),
+      "ما فيه مراجعات مكتوبة للحين. التقييم بالنجوم بس ما يطلع هنا.")}`
+    : '<div class="card note">ما فيه تقييمات للحين.</div>';
 }
 
 function marsSection() {
@@ -274,7 +356,7 @@ function marsSection() {
     <h2>المشتركين <span class="tag">مباشر</span></h2>
     <div class="grid2 wide">
       ${stat("يدفعون الحين", fmt(sub.paying), `شهري ${fmt(sub.monthly)} · سنوي ${fmt(sub.yearly)}`, "hero")}${stat("بفترة التجربة", fmt(sub.trial), sub.trialCancelled ? `ألغى التجديد منهم: ${fmt(sub.trialCancelled)}` : "تنتهي وتتحوّل اشتراك")}
-      ${stat("خلصت تجربتهم وما اشتركوا", fmt(sub.trialEnded))}${stat("دفعوا وبعدين وقّفوا", fmt(sub.lapsed), sub.cancelling ? `يدفعون وألغوا التجديد: ${fmt(sub.cancelling)}` : "")}
+      ${stat("نسبة التحويل من التجربة", sub.decided ? pct(sub.converted / sub.decided) : "—", sub.decided ? `${fmt(sub.converted)} دفعوا من ${fmt(sub.decided)} خلصت تجربتهم` : "ما خلصت تجربة أحد للحين")}${stat("خلصت تجربتهم وما اشتركوا", fmt(sub.trialEnded))}${stat("دفعوا وبعدين وقّفوا", fmt(sub.lapsed))}${stat("ألغوا التجديد", fmt(sub.cancelling), "مشتركين للحين بس ما راح يجددون")}
     </div>
     <h2>المستخدمين</h2>
     <div class="grid2">${stat("حسابات مسجّلة", fmt(acc.total), "جديد بالفترة: " + fmt(acc.new))}${stat("نشطين هالأسبوع", fmt(acc.activeWeek), "من المسجّلين")}</div>
